@@ -1,0 +1,14 @@
+@import "tailwindcss";
+
+body {
+  background: #E5E5E5;
+}
+.color-app {
+  background: #E5E5E5;
+}
+.text-xss {
+  font-size: 9px;
+}
+.scroll-hidden::-webkit-scrollbar {
+  display: none;
+}

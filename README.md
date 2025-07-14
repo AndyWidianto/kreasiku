@@ -56,6 +56,7 @@ Features include **JWT authentication**, **create post**, **like**, **comment**,
 ---
 ## 📁 Project Structure
 
+```bash
 /backend
 │
 ├── config/          # Konfigurasi database, JWT, atau env settings
@@ -83,7 +84,7 @@ Features include **JWT authentication**, **create post**, **like**, **comment**,
      ├── router/        # Routing Vue (Vue Router)
      └── App.vue        # Root komponen Vue
 
----
+```
 
 ## 🚀 Getting Started
 
