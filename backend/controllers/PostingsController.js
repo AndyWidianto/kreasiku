@@ -1,4 +1,4 @@
-import { findPostingPrimary, findPostings, insertPosting } from "../services/PostingsService.js";
+import { findPostingPrimary, findPostings, findPostingsUser, insertPosting } from "../services/PostingsService.js";
 
 
 export const getPostings = async (req, res) => {
@@ -50,6 +50,29 @@ export const getPosting = async (req, res) => {
         res.status(200).json({
             data: posting
         })
+    } catch (err) {
+        console.error(err);
+        res.status(500);
+    }
+}
+export const getPostingsUser = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const postings = await findPostingsUser(id);
+        const newPostings = postings.map(posting => {
+            posting.images = posting.images.map(image => {
+                image.image = image.image ? `${req.protocol}://${req.get('host')}/${image.image}` : null;
+                return {
+                    ...image.dataValues
+                }
+            });
+            return {
+                ...posting.dataValues
+            }
+        });
+        res.status(200).json({
+            data: postings
+        });
     } catch (err) {
         console.error(err);
         res.status(500);

@@ -41,6 +41,9 @@ function handleDeleteImage(index) {
 function isLike(likes) {
     return presenter.isLike(likes, state.user);
 }
+function likePosting(id) {
+    presenter.handleActionsLike(id, postings.value, state.user?.user_id);
+}
 function createPosting() {
     presenter.createPosting(state.content, state.images);
 }
@@ -48,9 +51,6 @@ function parseContent(content) {
     const newContent = content.split(/(#\w+)/g);
     console.log(newContent);
     return newContent;
-}
-function likePosting(id) {
-    presenter.handleActionsLike(id, postings.value, state.user?.user_id);
 }
 onMounted(() => {
     presenter.getPostings();
@@ -138,21 +138,21 @@ onMounted(() => {
                 </p>
                 <!-- untuk gambar kurang dari 2 -->
                 <div v-if="posting?.images.length < 1" class="flex flex-wrap justify-around items-center">
-                    <div class="flex items-center w-200 h-200 bg-black">
+                    <div class="flex items-center w-full min-h-80 max-h-200 bg-black">
                         <img v-for="image in posting.images" :src="image.image" :key="image.image_id"
                             alt="image posting" class="w-full h-auto object-cover border-1">
                     </div>
                 </div>
                 <!-- untuk gambar 2 -->
                 <div v-if="posting?.images.length < 3" class="flex flex-wrap justify-center items-center">
-                    <div class="grid grid-cols-2 w-200 h-200 bg-black">
+                    <div class="grid grid-cols-2 w-full min-h-80 max-h-200 bg-black">
                         <img v-for="image in posting.images" :src="image.image" :key="image.image_id"
                             alt="image posting" class="w-full h-full object-cover border-1">
                     </div>
                 </div>
                 <!-- untuk gambar lebih dari 2 -->
                 <div v-if="posting?.images.length > 2" class="flex items-center justify-center">
-                    <div class="grid grid-cols-3 grid-rows-2 w-200 bg-black h-150">
+                    <div class="grid grid-cols-3 grid-rows-2 w-full bg-black min-h-80 max-h-200">
                         <img v-for="(image, indexImage) in posting.images.slice(0, 3)" :key="image.image_id"
                             :src="image.image" alt="image posting" class="h-full object-cover"
                             :class="[indexImage === 0 ? 'col-span-2 row-span-1 row-span-2' : '']">

@@ -59,3 +59,21 @@ export const findPostingPrimary = async (id) => {
         ]
     });
 }
+export const findPostingsUser = async (id) => {
+    return await postings.findAll({
+        where: {
+            user_id: id
+        },
+        include: [
+            {
+                model: likesPosting
+            },
+            {
+                model: images
+            },
+            {
+                model: comments
+            }
+        ]
+    });
+}

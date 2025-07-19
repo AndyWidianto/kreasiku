@@ -33,6 +33,10 @@ export default class data {
         const res = await PublicApi.get(`/posting/${id}`);
         return res.data;
     }
+    async getPostingsUser(id) {
+        const res = await PublicApi.get(`/postings/user/${id}`);
+        return res.data;
+    }
     async createComment(posting_id, content) {
         const res = await AuthApi.post('/comment', {
             posting_id,

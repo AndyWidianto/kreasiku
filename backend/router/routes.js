@@ -1,7 +1,7 @@
 import Express from 'express';
 import multer from 'multer';
 import { getUser, getUsers, Login, Logout, Register, updateAccessToken } from '../controllers/UsersController.js';
-import { createPosting, getPosting, getPostings } from '../controllers/PostingsController.js';
+import { createPosting, getPosting, getPostings, getPostingsUser } from '../controllers/PostingsController.js';
 import { verifyToken } from '../middleware/middleware.js';
 import { createLikesPosting, deleteLikePosting, getLikesPosting } from '../controllers/LikesPostingController.js';
 import { createComment, getCommentsFromId } from '../controllers/commentsPostingController.js';
@@ -41,6 +41,7 @@ routes.post('/profile', verifyToken, upload.single("profile"), CreateProfile);
 
 routes.get('/postings', getPostings);
 routes.get('/posting/:id', getPosting);
+routes.get('/postings/user/:id', getPostingsUser);
 routes.post('/posting', verifyToken, createPosting);
 routes.post('/images/posting', upload.array('images'), createImagesPosting);
 
