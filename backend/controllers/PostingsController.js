@@ -1,4 +1,5 @@
-import { findPostingPrimary, findPostings, insertPosting } from "../services/PostingsService.js"
+import { findPostingPrimary, findPostings, insertPosting } from "../services/PostingsService.js";
+
 
 export const getPostings = async (req, res) => {
     try {

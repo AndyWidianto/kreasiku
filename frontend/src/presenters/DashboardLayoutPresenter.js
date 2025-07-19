@@ -9,7 +9,9 @@ export default class DashboardLayoutPresenter {
     async getUser() {
         try {
             const res = await this.#model.getUser();
-            console.log("ini dari layout", res);
+            if (!res.data.profile) {
+                this.#view.router.push("/create/profile");
+            }
             this.#view.user(res.data);
         } catch (err) {
             console.error(err);

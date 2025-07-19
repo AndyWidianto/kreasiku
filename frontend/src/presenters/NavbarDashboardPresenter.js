@@ -23,4 +23,15 @@ export default class NavbarDashboardPresenter {
             console.error(err);
         }
     }
+    async Logout() {
+        if (!confirm("Apakah anda yakin ingin Logout?")) return;
+        try {
+            localStorage.removeItem("kreasiku");
+            const res = await this.#model.logout();
+            console.log(res);
+            this.#view.router.push("/login");
+        } catch (err) {
+            console.error(err);
+        }
+    }
 }

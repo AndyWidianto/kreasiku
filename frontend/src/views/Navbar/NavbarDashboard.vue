@@ -1,7 +1,7 @@
 <script setup>
-import { Bell, Heart, MessageCircle, Search, UserPlus2 } from 'lucide-vue-next';
+import { Bell, Heart, MessageCircle, Search, UserPlus2, User2, LogOut } from 'lucide-vue-next';
 import { onMounted, reactive, ref } from 'vue';
-import { RouterLink } from 'vue-router';
+import { RouterLink, useRouter } from 'vue-router';
 import NavbarDashboardPresenter from '../../presenters/NavbarDashboardPresenter';
 import data from '../../models/data';
 
@@ -11,14 +11,17 @@ const props = defineProps({
 const state = reactive({
     DropDownNotifikasi: false,
     NitificationsNotRead: [],
-    notifications: []
+    notifications: [],
+    refDropDownProfile: false,
+    router: useRouter()
 });
 
 const presenter = new NavbarDashboardPresenter({
     model: new data(),
     view: {
         NotificationsNotRead: (value) => state.NitificationsNotRead = value,
-        notifications: (value) => state.notifications = value
+        notifications: (value) => state.notifications = value,
+        router: state.router
     }
 })
 function handleShowDropDown() {
@@ -26,6 +29,9 @@ function handleShowDropDown() {
     if (state.DropDownNotifikasi) {
         presenter.getNotifications();
     }
+}
+function Logout() {
+    presenter.Logout();
 }
 onMounted(() => {
     presenter.getNotificationNotRead();
@@ -50,7 +56,10 @@ onMounted(() => {
                 </div>
             </button>
             <ul class="flex-col gap-2 p-2 bg-gray-100 absolute right-0 w-100 max-h-80 overflow-y-scroll scroll-hidden" :class="[state.DropDownNotifikasi ? 'flex' : 'hidden']">
-                <li v-for="notification in state.notifications">
+                <li v-if="state.notifications" class="w-full text-center p-2">
+                    <div class="text-center">Belum ada notif nih</div>
+                </li>
+                <li v-else v-for="notification in state.notifications">
                     <RouterLink class="flex gap-2" v-if="notification?.verb === 'comment'">
                         <div class="flex items-end relative">
                             <img src="/images/samsung2.jpg" alt="" class="w-10 h-10 object-cover p-2 rounded-full">
@@ -58,7 +67,6 @@ onMounted(() => {
                         </div>
                         <div class="">
                             <h2><span class="font-bold">Andy</span> telah mengomentari postingan anda</h2>
-                            <p>"@rizka Apa kabar"</p>
                         </div>
                     </RouterLink>
                     <RouterLink class="flex gap-2" v-else-if="notification?.verb === 'follow'">
@@ -83,10 +91,24 @@ onMounted(() => {
                 </li>
             </ul>
         </li>
-        <li class="shrink-0 w-10 h-10">
-            <RouterLink :to="`/profile/${props.user?.username}`">
-                <img :src="[props.user?.profile.profile_picture ? props.user.profile.profile_picture : '/images/tuanCrabs.jpeg']" alt="" class="w-full h-full object-cover rounded-full">
-            </RouterLink>
+        <li class="shrink-0 w-10 h-10 relative">
+            <button @click="() => state.refDropDownProfile = !state.refDropDownProfile">
+                <img :src="[props.user?.profile?.profile_picture ? props.user.profile?.profile_picture : '/images/tuanCrabs.jpeg']" alt="" class="w-10 h-10 object-cover rounded-full">
+            </button>
+            <ul class="absolute right-0 w-30 max-h-100 bg-gray-100 text-center" :class="[state.refDropDownProfile ? 'block' : 'hidden']">
+                <li class="w-full">
+                    <RouterLink :to="`/profile/${props.user?.username}`" class="flex justify-center items-center gap-1 hover:bg-gray-200 p-2 px-3 text-gray-600">
+                        <User2 class="w-4 h-4" />
+                        Profile
+                    </RouterLink>
+                </li>
+                <li class="w-full">
+                    <button @click="Logout" class="flex justify-center items-center gap-1 w-full hover:bg-gray-200 p-2 px-3 text-red-600">
+                        <LogOut class="w-4 h-4" />
+                        Logout
+                    </button>
+                </li>
+            </ul>
         </li>
     </ul>
 </template>

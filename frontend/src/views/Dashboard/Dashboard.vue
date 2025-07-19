@@ -50,7 +50,7 @@ function parseContent(content) {
     return newContent;
 }
 function likePosting(id) {
-    presenter.handleActionsLike(id, postings.value, state.user.user_id);
+    presenter.handleActionsLike(id, postings.value, state.user?.user_id);
 }
 onMounted(() => {
     presenter.getPostings();
@@ -121,7 +121,7 @@ onMounted(() => {
                     <img src="/images/tuanCrabs.jpeg" alt="" class="w-full h-full object-cover rounded-full border-1">
                 </div>
                 <div class="w-full">
-                    <h2 class="text-lg font-semibold">{{ posting?.user.profile.name }}</h2>
+                    <h2 class="text-lg font-semibold">{{ posting?.user.profile?.name }}</h2>
                     <p class="text-sm text-gray-600">{{ posting?.user.username }}</p>
                 </div>
                 <button>

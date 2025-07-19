@@ -8,6 +8,8 @@ import CreatePostPage from "../views/createPost/CreatePostPage.vue";
 import LoginPage from "../views/Auth/LoginPage.vue";
 import Percobaan from "../views/percobaan.vue";
 import Register from "../views/Auth/Register.vue";
+import CreateProfile from "../views/Profile/CreateProfile.vue";
+import SearchPage from "../views/search/SearchPage.vue";
 
 const routes = [
     {
@@ -43,6 +45,14 @@ const routes = [
     {
         path: "/register",
         component: Register
+    },
+    {
+        path: "/create/profile",
+        component: CreateProfile
+    },
+    {
+        path: "/search/:name",
+        component: SearchPage
     },
     {
         path: "/percobaan",

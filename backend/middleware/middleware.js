@@ -2,13 +2,19 @@ import jwt from "jsonwebtoken";
 
 const secret = process.env.SECRET_JWT;
 
-export const createToken = (data) => {
+export const createAccessToken = (data) => {
     const payload = {
         user_id: data.user_id,
         username: data.username,
-        email: data.email
     }
-    return jwt.sign(payload, secret, { expiresIn: "24h" });
+    return jwt.sign(payload, secret, { expiresIn: "15m" });
+}
+export const createRefreshToken = (data) => {
+    const payload = {
+        user_id: data.user_id,
+        username: data.username,
+    }
+    return jwt.sign(payload, secret, { expiresIn: 60 * 24 * 30 });
 }
 
 export const verifyToken = (req, res, next) => {

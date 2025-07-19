@@ -57,9 +57,9 @@ export default class DashboardPresenter {
         }
     }
     isLike(likes, user) {
-        if (!likes) return;
-        if (likes.length > 1) return;
-        const findLike = likes.findIndex(value => value.user_id === user?.user_id);
+        console.log(user);
+        console.log("total", likes);
+        const findLike = likes?.findIndex(value => value.user_id === user?.user_id);
         if (findLike === -1) {
             return false;
         }
@@ -84,13 +84,12 @@ export default class DashboardPresenter {
     async handleActionsLike(id, postings, user_id) {
         const findPosting = postings.findIndex(posting => posting.posting_id === id);
         const findLike = postings[findPosting].likes.findIndex(like => like.user_id === user_id && like.posting_id === id);
-        console.log(findLike < 0);
         if (findLike < 0) {
             postings[findPosting].likes.push({
                 user_id: user_id,
                 posting_id: id
             })
-            await this.createLike(id, user_id)
+            await this.createLike(id, user_id);
         } else {
             postings[findPosting].likes = postings[findPosting].likes.filter((like, index) => index !== findLike);
             await this.deleteLike(id);

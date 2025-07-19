@@ -21,9 +21,6 @@ export const findUserForLogin = async (user) => {
                     email: user
                 }
             ]
-        },
-        include: {
-            model: profiles
         }
     })
 }
@@ -75,4 +72,16 @@ export const findUserPk = async (id) => {
             }
         ]
     });
+}
+export const findUserToToken = async (id) => {
+    return await users.findByPk(id);
+}
+export const updateRefreshToken = async (user_id, refreshToken) => {
+    return await users.update({
+        refreshToken
+    }, {
+        where: {
+            user_id
+        }
+    })
 }

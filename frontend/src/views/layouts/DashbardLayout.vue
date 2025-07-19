@@ -18,13 +18,15 @@ import data from '../../models/data';
 import DashboardLayoutPresenter from '../../presenters/DashboardLayoutPresenter';
 import NavbarDashboard from '../Navbar/NavbarDashboard.vue';
 import NavbarLeftDashboard from '../Navbar/NavbarLeftDashboard.vue';
-import { RouterView } from 'vue-router';
+import { RouterView, useRouter } from 'vue-router';
 
 const user = ref(null);
+const router = useRouter();
 const presenter = new DashboardLayoutPresenter({
     model: new data(),
     view: {
-        user: (value) => user.value = value
+        user: (value) => user.value = value,
+        router: router
     }
 })
 onMounted(() => {
