@@ -11,6 +11,7 @@ import Register from "../views/Auth/Register.vue";
 import CreateProfile from "../views/Profile/CreateProfile.vue";
 import SearchPage from "../views/search/SearchPage.vue";
 
+
 const routes = [
     {
         path: "/",
@@ -51,7 +52,7 @@ const routes = [
         component: CreateProfile
     },
     {
-        path: "/search/:name",
+        path: "/search/:search",
         component: SearchPage
     },
     {

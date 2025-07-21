@@ -25,8 +25,12 @@ export default class data {
         });
         return res.data;
     }
-    async getPostings() {
-        const res = await PublicApi.get('/postings');
+    async getPostings(offset, limit) {
+        const res = await PublicApi.get(`/postings?offset=${offset}&limit=${limit}`);
+        return res.data;
+    }
+    async searchPostings(search) {
+        const res = await PublicApi.get(`/postings?search=${search}`);
         return res.data;
     }
     async getPosting(id) {

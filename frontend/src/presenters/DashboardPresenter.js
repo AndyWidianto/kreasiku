@@ -5,12 +5,18 @@ export default class DashboardPresenter {
         this.#model = model;
         this.#view = view;
     }
-    async getPostings() {
+    async getPostings(limit, page, postings, hasMore) {
+        if (!hasMore) return;
         this.#view.loading(true);
         try {
-            const res = await this.#model.getPostings();
+            const offset = (page - 1) * limit;
+            const res = await this.#model.getPostings(offset, limit);
+            if (res.data.length < limit) {
+                this.#view.hasMore(false);
+            }
+            this.#view.page(page + 1);
             console.log(res);
-            this.#view.postings(res.data);
+            this.#view.postings([...postings, ...res.data]);
         } catch (err) {
             console.error(err);
         } finally {

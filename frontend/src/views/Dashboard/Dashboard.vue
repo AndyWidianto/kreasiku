@@ -8,6 +8,10 @@ import { onMounted, reactive, ref } from 'vue';
 const voice = new Audio('/vioce/doraemon_mamikos.mp3');
 const postings = ref([]);
 const refImage = ref();
+const page = ref(1);
+const limit = 5;
+const loadMore = ref(null);
+const hasMore = ref(true);
 const state = reactive({
     user: null,
     loading: false,
@@ -28,7 +32,9 @@ const presenter = new DashboardPresenter({
         showCreatePosting: (value) => state.showCreatePosting = value,
         progress: (value) => state.progress = value,
         images: (value) => state.images.push(value),
-        previewImages: (value) => state.previewImages.push(value)
+        previewImages: (value) => state.previewImages.push(value),
+        hasMore: (value) => hasMore.value = value,
+        page: (value) => page.value = value
     }
 });
 function handleChangeImage(e) {
@@ -52,9 +58,24 @@ function parseContent(content) {
     console.log(newContent);
     return newContent;
 }
+let observer = null;
 onMounted(() => {
-    presenter.getPostings();
+    presenter.getPostings(limit, page.value, postings.value, hasMore.value);
     presenter.getUser();
+    observer = new IntersectionObserver((enteries) => {
+        enteries.forEach(entry => {
+            if (entry.isIntersecting) {
+                presenter.getPostings(limit, page.value, postings.value, hasMore.value);
+            }
+        })
+    }, {
+        root: null,
+        rootMargin: '0px',
+        threshold: 0.1
+    })
+    if (loadMore.value) {
+        observer.observe(loadMore.value);
+    }
 });
 </script>
 <template>
@@ -137,24 +158,24 @@ onMounted(() => {
                     </span>
                 </p>
                 <!-- untuk gambar kurang dari 2 -->
-                <div v-if="posting?.images.length < 1" class="flex flex-wrap justify-around items-center">
+                <div v-if="posting?.images.length == 1" class="flex flex-wrap justify-around items-center">
                     <div class="flex items-center w-full min-h-80 max-h-200 bg-black">
                         <img v-for="image in posting.images" :src="image.image" :key="image.image_id"
-                            alt="image posting" class="w-full h-auto object-cover border-1">
+                            alt="image posting" class="w-full h-auto object-cover">
                     </div>
                 </div>
                 <!-- untuk gambar 2 -->
-                <div v-if="posting?.images.length < 3" class="flex flex-wrap justify-center items-center">
-                    <div class="grid grid-cols-2 w-full min-h-80 max-h-200 bg-black">
+                <div v-if="posting?.images.length < 3 && posting?.images.length > 1" class="flex flex-wrap justify-center items-center">
+                    <div class="grid grid-cols-2 gap-[1px] w-full min-h-80 max-h-200 bg-black">
                         <img v-for="image in posting.images" :src="image.image" :key="image.image_id"
-                            alt="image posting" class="w-full h-full object-cover border-1">
+                            alt="image posting" class="w-full h-full object-cover">
                     </div>
                 </div>
                 <!-- untuk gambar lebih dari 2 -->
                 <div v-if="posting?.images.length > 2" class="flex items-center justify-center">
-                    <div class="grid grid-cols-3 grid-rows-2 w-full bg-black min-h-80 max-h-200">
+                    <div class="grid grid-cols-3 gap-[1px] grid-rows-2 w-full bg-black min-h-80 max-h-200">
                         <img v-for="(image, indexImage) in posting.images.slice(0, 3)" :key="image.image_id"
-                            :src="image.image" alt="image posting" class="h-full object-cover"
+                            :src="image.image" alt="image posting" class="h-full w-full object-cover"
                             :class="[indexImage === 0 ? 'col-span-2 row-span-1 row-span-2' : '']">
                     </div>
                 </div>
@@ -177,5 +198,9 @@ onMounted(() => {
                 </div>
             </div>
         </div>
+        <div ref="loadMore" v-if="hasMore">
+            <p class="p-2">Load more...</p>
+        </div>
+        <div class="" v-else-if="!hasMore">no more data</div>
     </div>
 </template>

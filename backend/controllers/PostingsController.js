@@ -2,8 +2,31 @@ import { findPostingPrimary, findPostings, findPostingsUser, insertPosting } fro
 
 
 export const getPostings = async (req, res) => {
+    const { search, offset, limit } = req.query;
     try {
-        const postings = await findPostings();
+        if (search) {
+            const postings = await findPostings(search);
+            if (!postings) {
+                return res.status(200).json({
+                    message: "Yah tidak ada nih"
+                });
+            }
+            const newPostings = postings.map(posting => {
+                posting.dataValues.images = posting.dataValues.images.map(image => {
+                    image.image = `${req.protocol}://${req.get('host')}/${image.image}`;
+                    return {
+                        ...image.dataValues
+                    }
+                });
+                return {
+                    ...posting.dataValues
+                }
+            })
+            return res.status(200).json({
+                data: newPostings
+            })
+        }
+        const postings = await findPostings(parseInt(limit), parseInt(offset));
         const newPostings = postings.map(posting => {
             posting.dataValues.images = posting.dataValues.images.map(image => {
                 image.image = `${req.protocol}://${req.get('host')}/${image.image}`;
