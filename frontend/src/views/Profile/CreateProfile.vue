@@ -7,29 +7,30 @@ import { useRouter } from 'vue-router';
 import LoadingSpinner from '../components/loadings/LoadingSpinner.vue';
 
 const inputProfile = ref();
+const loading = ref(false);
+const user = ref({});
 const state = reactive({
-    user: {},
     previewProfile: '',
     previewCover: '',
     Pagnation: 1,
     MaxPagnation: 4,
-    router: useRouter(),
-    loading: false
 });
+
+const name = ref('');
 const formData = reactive({
     profile: '',
-    name: '',
     description: '',
     gender: '',
     date_of_birth: '',
-    address: ''
+    address: '',
+    router: useRouter()
 });
 const presenter = new CreateProfilePresenter({
     model: new data(),
     view: {
-        loading: (value) => state.loading = value,
-        user: (value) => state.user = value,
-        name: (value) => formData.name = value,
+        loading: loading,
+        user: user,
+        name: name,
         router: state.router
     }
 })
@@ -99,7 +100,7 @@ onMounted(() => {
                 </div>
             <button @click="CreateProfile"
                 class="px-3 p-2 rounded-md font-semibold border-1 border-gray-100 bg-blue-500 text-gray-100">
-                <LoadingSpinner v-if="state.loading" :LoadingSize="'6'" :hieghtContent="'6'" :widthContent="'6'" />
+                <LoadingSpinner v-if="loading" :LoadingSize="'6'" :hieghtContent="'6'" :widthContent="'6'" />
                 Create Profile
             </button>
             </div>

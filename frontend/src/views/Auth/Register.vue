@@ -14,15 +14,13 @@ const formData = reactive({
     password: '',
     confirmPassword: ''
 });
-const state = reactive({
-    loading: false,
-    message: ''
-})
+const message = ref('');
+const loading = ref(false);
 const presenter = new RegisterPresenter({
     model: new data(),
     view: {
-        loading: (value) => state.loading = value,
-        message: (value) => state.message = value,
+        loading: loading,
+        message: message,
         router: router
     }
 })
@@ -84,11 +82,11 @@ function Register() {
                                 <LockOpen v-else class="w-5 h-5 text-gray-800" />
                             </div>
                         </div>
-                        <div class="px-2 text-xs font-semibold text-red-600">{{ state.message }}</div>
+                        <div class="px-2 text-xs font-semibold text-red-600">{{ message }}</div>
                     </div>
                     <div class="pt-10 p-2">
                         <button type="submit" class="flex items-center justify-center gap-2 w-full p-2 bg-blue-700 text-gray-200 rounded-sm">
-                            <LoadingSpinner v-if="state.loading" :LoadingSize="'6'" :hieghtContent="'6'" :widthContent="'6'" :color="'white'" />
+                            <LoadingSpinner v-if="loading" :LoadingSize="'6'" :hieghtContent="'6'" :widthContent="'6'" :color="'white'" />
                             Create Account
                         </button>
                     </div>

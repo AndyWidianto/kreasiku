@@ -1,3 +1,6 @@
+import { nanoid } from "nanoid";
+
+
 export default class CommentsDashboardPresenter {
     #model;
     #view;
@@ -6,19 +9,21 @@ export default class CommentsDashboardPresenter {
         this.#view = view;
     }
     async getPosting(id) {
+        this.#view.loading.value = true;
         try {
             const res = await this.#model.getPosting(id);
             console.log(res.data);
-            this.#view.posting(res.data);
+            this.#view.posting.value = res.data;
         } catch (err) {
             console.error(err);
+        } finally {
+            this.#view.loading.value = false;
         }
     }
     async getUser() {
         try {
             const res = await this.#model.getUser();
-            console.log(res);
-            this.#view.user(res.data);
+            this.#view.user.value = res.data;
         } catch (err) {
             console.error(err);
         }
@@ -37,48 +42,116 @@ export default class CommentsDashboardPresenter {
             console.error(err);
         }
     }
-    async handleActionsLike(id, posting, user_id) {
-        const findLike = posting.likes.findIndex(like => like.user_id === user_id && like.posting_id === id);
+    async handleActionsLike(posting, user_id) {
+        const findLike = posting.likes.findIndex(like => like.user_id === user_id && like.posting_id === posting.posting_id);
         if (findLike < 0) {
+            const id = nanoid();
             posting.likes.push({
+                id: id,
                 user_id: user_id,
-                posting_id: id
+                posting_id: posting.posting_id
             })
-            await this.createLike(id, user_id);
+            posting.is_like = true;
+            await this.#model.createLike(posting.posting_id, id);
         } else {
-            posting.likes = posting.likes.filter((like, index) => index !== findLike);
-            await this.deleteLike(id);
+            const like = posting.likes[findLike];
+            posting.likes = posting.likes.filter(value => value.id !== like.id);
+            posting.is_like = false;
+            await this.#model.deleteLike(like.id);
         }
-        this.#view.posting(posting);
+        this.#view.posting.value = posting;
     }
     async handleSelectKey(content) {
         const mantionMatch = content.match(/@(\w*)$/);
         if (mantionMatch) {
-            this.#view.showDropdownUser(true);
+            this.#view.showDropdownUser.value = true;
             const query = mantionMatch[1].toLowerCase();
             setTimeout(async () => {
                 const res = await this.#model.getUsersFromUsername(query);
-                this.#view.suggestions(res.data);
+                this.#view.suggestions.value = res.data;
             }, 100);
         } else {
-            this.#view.showDropdownUser(false);
+            this.#view.showDropdownUser.value = false;
         }
     }
-    async createComment(posting, user, content) {
+    async createComment(socket, posting, user, content) {
         try {
+            const comment_id = nanoid();
             const state = {
+                comment_id: comment_id,
                 user_id: user.user_id,
                 posting: posting.posting_id,
                 content: content,
                 user: user,
             }
             posting.comments.push(state);
-            this.#view.posting(posting);
-            this.#view.content('');
-            const res = await this.#model.createComment(posting.posting_id, content);
-            console.log(res);
+            this.#view.posting.value = posting;
+            this.#view.content.value = '';
+            await this.#model.createComment(comment_id, posting.posting_id, content);
+            const id = nanoid();
+            const verb = "comment";
+            const message = "mengomentari postingan anda";
+            socket.emit("notifications", ({ id, receiver_id: user.user_id, actor_id: posting.user.user_id, object_id: posting.posting_id, data: state, verb, message, user }));
         } catch (err) {
             console.error(err);
+        }
+    }
+    async createMention(socket, comment_id, posting, user, content, mentions) {
+        try {
+            const mention_id = nanoid();
+            const state = {
+                id: mention_id,
+                comment_id: comment_id,
+                user_id: user.user_id,
+                content: content,
+                user: user,
+            }
+            const findIndex = posting.comments.findIndex(comment => comment.comment_id === comment_id);
+            posting.comments[findIndex].mentions.push(state);
+            this.#view.posting.value = posting;
+            this.#view.content.value = '';
+            await this.#model.createMention(mention_id, comment_id, content);
+            mentions.map(mention => {
+                const id = nanoid();
+                const verb = "mention";
+                const message = "menyebut anda dalam postingan";
+                socket.emit("notifications", ({ id, receiver_id: user.user_id, actor_id: mention.id, object_id: posting.posting_id, data: state, verb, message, user }));
+            })
+        } catch (err) {
+            console.error(err);
+        }
+    }
+    async getComments(limit, page, posting_id, hasMore, comments) {
+        if (!hasMore) return;
+        try {
+            const offset = (page - 1) * limit;
+            const res = await this.#model.getComments(posting_id, offset, limit);
+            if (res.data.length < limit) {
+                this.#view.hasMore.value = false;
+            }
+            this.#view.comments.value = [...comments, ...res.data];
+            this.#view.page.value = page + 1;
+        } catch (err) {
+            console.error(err);
+        }
+    }
+    async getMentions(id, limit, page, comments) {
+        this.#view.loadingMentions.value = true;
+        try {
+            const offset = (page - 1) * limit;
+            const res = await this.#model.getMentions(id, offset, limit);
+            const findIndex = comments.findIndex(value => value.comment_id === id);
+            if (!comments[findIndex].mentions) {
+                comments[findIndex].mentions = res.data;
+            } else {
+                comments[findIndex].mentions = [...comments[findIndex].mentions, ...res.data];
+            };
+            this.#view.comments.value = comments;
+            this.#view.pageMentions.value = page + 1;
+        } catch (err) {
+            console.error(err);
+        } finally {
+            this.#view.loadingMentions.value = false;
         }
     }
 }

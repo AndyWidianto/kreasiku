@@ -10,15 +10,15 @@ const route = useRoute();
 const router = useRouter();
 const { search } = route.params;
 const postings = ref();
+const loading = ref(false);
 const state = reactive({
     search: '',
-    loading: false,
 });
 const presenter = new SearchPresenter({
     model: new data(),
     view: {
-        postings: (value) => postings.value = value,
-        loading: (value) => state.loading = value
+        postings: postings.value,
+        loading: loading
     }
 })
 function isLike(likes) {
@@ -52,7 +52,7 @@ watch(() => route.params.search, async (newSearch, oldSearch) => {
                 </form>
             </div>
             <div class="w-full py-8"></div>
-            <div class="flex justify-center text-blue-500" v-if="state.loading">
+            <div class="flex justify-center text-blue-500" v-if="loading">
                 <LoadingSpinner :hieght-content="30" :widthContent="'full'" :LoadingSize="10" />
             </div>
             <div v-else v-for="posting in postings" :key="posting?.posting_id" class="w-full p-2">

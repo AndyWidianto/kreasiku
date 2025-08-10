@@ -6,25 +6,25 @@ export default class ProfilePresenter {
         this.#view = view;
         this.#model = model;
     }
-    async getUser() {
+    async getUser(username) {
         try {
-            const res = await this.#model.getUser();
-            this.#view.user(res.data);
+            const res = await this.#model.getUserFromUsername(username);
+            this.#view.user.value = res.data;
             this.getPostingsUser(res.data.user_id);
         } catch (err) {
             console.error(err);
         }
     }
     async getPostingsUser(id) {
-        this.#view.loading(true);
+        this.#view.loading.value = true;
         try {
             const res = await this.#model.getPostingsUser(id);
             console.log(res.data);
-            this.#view.posting(res.data);
+            this.#view.posting.value = res.data;
         } catch (err) {
             console.error(err);
         } finally {
-            this.#view.loading(false);
+            this.#view.loading.value = false;
         }
     }
     isLike(likes, user) {
@@ -65,6 +65,6 @@ export default class ProfilePresenter {
             postings[findPosting].likes = postings[findPosting].likes.filter((like, index) => index !== findLike);
             await this.deleteLike(id);
         }
-        this.#view.postings(postings);
+        this.#view.postings.value = postings;
     }
 }

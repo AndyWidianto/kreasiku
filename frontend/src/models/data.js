@@ -26,7 +26,11 @@ export default class data {
         return res.data;
     }
     async getPostings(offset, limit) {
-        const res = await PublicApi.get(`/postings?offset=${offset}&limit=${limit}`);
+        const res = await PublicApi.get(`/postings?offset=${offset}&limit=${limit}`, {
+            headers: {
+                Authorization: `Bearer ${this.token}`
+            }
+        });
         return res.data;
     }
     async searchPostings(search) {
@@ -34,17 +38,30 @@ export default class data {
         return res.data;
     }
     async getPosting(id) {
-        const res = await PublicApi.get(`/posting/${id}`);
+        const res = await PublicApi.get(`/posting/${id}`, {
+            headers: {
+                Authorization: `Bearer ${this.token}`
+            }
+        });
         return res.data;
     }
     async getPostingsUser(id) {
         const res = await PublicApi.get(`/postings/user/${id}`);
         return res.data;
     }
-    async createComment(posting_id, content) {
+    async createComment(comment_id, posting_id, content) {
         const res = await AuthApi.post('/comment', {
             posting_id,
-            content
+            content,
+            comment_id
+        });
+        return res.data;
+    }
+    async getComments(id, offset, limit) {
+        const res = await PublicApi.get(`/comments/${id}?offset=${offset}&limit=${limit}`, {
+            headers: {
+                Authorization: `Bearer ${this.token}`
+            }
         });
         return res.data;
     }
@@ -66,9 +83,10 @@ export default class data {
         const res = await PublicApi.get(`/likes/${id}`);
         return res.data;
     }
-    async createLike(id) {
+    async createLike(posting_id, id) {
         const res = await AuthApi.post('/like', {
-            posting_id: id
+            posting_id,
+            id
         });
         return res.data;
     }
@@ -78,6 +96,14 @@ export default class data {
     }
     async getUser() {
         const res = await AuthApi.get('/user');
+        return res.data;
+    }
+    async getUserFromUsername(username) {
+        const res = await PublicApi.get(`/user/${username}`, {
+            headers: {
+                Authorization: `Bearer ${this.token}`
+            }
+        });
         return res.data;
     }
     async getUsersFromUsername(username) {
@@ -93,10 +119,37 @@ export default class data {
         return res.data;
     }
     async CreateProfile(data) {
-        console.log("data", data);
         const res = await AuthApi.post('/profile', data, {
             headers: {
                 "Content-Type": "multipart/form-data"
+            }
+        });
+        return res.data;
+    }
+    async updateCoverProfile(id, data) {
+        const res = await AuthApi.post(`/update/cover/${id}`, data, {
+            headers: {
+                "Content-Type": "multipart/form-data"
+            }
+        });
+        return res.data;
+    }
+    async getConverstation() {
+        const res = await AuthApi.get('/converstations');
+        return res.data;
+    }
+    async createMention(id, comment_id, content) {
+        const res = await AuthApi.post('/mention', {
+            id,
+            content,
+            comment_id
+        });
+        return res.data;
+    }
+    async getMentions(id, offset, limit) {
+        const res = await PublicApi.get(`/mentions/${id}?offset=${offset}&limit=${limit}`, {
+            headers: {
+                Authorization: `Bearer ${this.token}`
             }
         });
         return res.data;

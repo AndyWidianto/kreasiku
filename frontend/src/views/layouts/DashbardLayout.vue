@@ -1,17 +1,3 @@
-<template>
-    <div class="grid grid-cols-[350px_1fr]">
-        <NavbarLeftDashboard />
-        <div class="p-0 m-0">
-            <header>
-                <NavbarDashboard :user="user" />
-            </header>
-            <main class="pt-15 flex justify-center">
-                <RouterView />
-            </main> 
-            <footer></footer>
-        </div>
-    </div>
-</template>
 <script setup>
 import { onMounted, ref } from 'vue';
 import data from '../../models/data';
@@ -25,7 +11,7 @@ const router = useRouter();
 const presenter = new DashboardLayoutPresenter({
     model: new data(),
     view: {
-        user: (value) => user.value = value,
+        user: user,
         router: router
     }
 })
@@ -33,3 +19,17 @@ onMounted(() => {
     presenter.getUser();
 })
 </script>
+<template>
+    <div class="grid transition-all duration-300 grid-cols-[0px_1fr] md:grid-cols-[350px_1fr]">
+        <NavbarLeftDashboard />
+        <div class="p-0 m-0">
+            <header>
+                <NavbarDashboard :user="user" />
+            </header>
+            <main class="pt-15 flex justify-center">
+                <RouterView />
+            </main> 
+            <footer></footer>
+        </div>
+    </div>
+</template>

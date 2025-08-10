@@ -9,8 +9,8 @@ export default class RegisterPresenter {
     }
     
     async Register(username, email, password, confirmPassword) {
-        if (password !== confirmPassword) return this.#view.message("masukan password yang sama untuk confirm password");
-        this.#view.loading(true);
+        if (password !== confirmPassword) return this.#view.message.value = "masukan password yang sama untuk confirm password";
+        this.#view.loading.value = true
         try {
             const regis = await this.#model.register({ username, email, password });
             console.log(regis);
@@ -19,7 +19,7 @@ export default class RegisterPresenter {
         } catch (err) {
             console.error(err);
         } finally {
-            this.#view.loading(false);
+            this.#view.loading.value = false;
         }
     }
 }

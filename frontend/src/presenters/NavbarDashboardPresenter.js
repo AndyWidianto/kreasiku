@@ -9,18 +9,22 @@ export default class NavbarDashboardPresenter {
     async getNotificationNotRead() {
         try {
             const res = await this.#model.geNotifNotRead();
-            this.#view.NotificationsNotRead(res.data);
+            console.log(res);
+            this.#view.NotificationsNotRead.value = res.data;
         } catch (err) {
             console.error(err);
         }
     }
     async getNotifications() {
+        this.#view.loading.value = true;
         try {
             const res = await this.#model.getNotifications();
             console.log(res);
-            this.#view.notifications(res.data);
+            this.#view.notifications.value = res.data;
         } catch (err) {
             console.error(err);
+        } finally {
+            this.#view.loading.value = false;
         }
     }
     async Logout() {

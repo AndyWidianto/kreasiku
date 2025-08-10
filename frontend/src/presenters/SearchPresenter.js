@@ -8,15 +8,15 @@ export default class SearchPresenter {
     }
 
     async SearchPostings(search) {
-        this.#view.loading(true);
+        this.#view.loading.value = true;
         try {
             const res = await this.#model.searchPostings(search);
             console.log(res);
-            this.#view.postings(res.data);
+            this.#view.postings.value = res.data;
         } catch (err) {
             console.error(err);
         } finally {
-            this.#view.loading(false);
+            this.#view.loading.value = false;
         }
     }
 }

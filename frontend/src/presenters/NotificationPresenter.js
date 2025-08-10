@@ -1,22 +1,18 @@
-
-export default class LoginPresenter {
+export default class NotificationPresenter {
     #model;
     #view;
+
     constructor({ model, view }) {
         this.#model = model;
         this.#view = view;
     }
 
-    async Login(username, password) {
+    async getNotifications() {
         this.#view.loading.value = true;
         try {
-            const res = await this.#model.Login(username, password);
-            if ("Storage" in window) {
-                console.log("Apakah iya");
-                localStorage.setItem("kreasiku", res.token)
-            }
+            const res = await this.#model.getNotifications();
             console.log(res);
-            this.#view.navigate.push("/");
+            this.#view.notifications.value = res.data;
         } catch (err) {
             console.error(err);
         } finally {

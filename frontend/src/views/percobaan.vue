@@ -1,100 +1,52 @@
+<script setup>
+import axios from "axios";
+import { inject, onMounted, ref } from "vue";
+
+const newMessage = ref();
+const active = ref(false);
+const messages = ref([
+  "aku adalah",
+  "aku aku",
+  "ya ya yah"
+]);
+const socket = inject("socket");
+
+function handleSubmit() {
+  socket.emit("private_message", ({ id_target: 1, message: newMessage.value }));
+  newMessage.value = '';
+}
+onMounted(() => {
+  socket.on("connect_error", async (err) => {
+    console.log(err);
+    try {
+      const res = await axios.get("http://localhost:3000/refreshToken", {
+        withCredentials: true
+      });
+      console.log(res.data);
+      localStorage.setItem("kreasiku", res.data.token);
+      socket.connect();
+    } catch (err) {
+      console.log(err);
+    }
+  });
+  socket.on("private_message", (data) => {
+    messages.value = [...messages.value, data.message];
+  });
+})
+</script>
 <template>
-  <div>
-    <h1>Infinite Scroll Demo</h1>
-
-    <div v-for="item in items" :key="item.id" class="item">
-      {{ item.title }}
+  <div class="w-full">
+    <h2 class="font-bold text-2xl" v-if="active">
+        User sedang aktif nih
+    </h2>
+    <div class="h-100 overflow-scroll">
+      <li class="" v-for="message in messages">{{ message }}</li>
     </div>
-
-    <div ref="loadMore" v-if="hasMore">
-      <p>Loading more...</p>
-    </div>
-
-    <div v-else>
-      <p>No more data.</p>
+    <div class="">
+      <form @submit.prevent="handleSubmit">
+        <input type="text" name="" id="" v-model="newMessage" class="w-full p-2 border-1 border-gray-600">
+        <button type="submit">Send</button>
+      </form>
     </div>
   </div>
 </template>
-
-<script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
-
-// ✅ Data dummy
-const allData = Array.from({ length: 100 }, (_, i) => ({
-  id: i + 1,
-  title: `Item #${i + 1}`
-}))
-
-const items = ref([])      // data yang ditampilkan
-const page = ref(1)
-const limit = 10           // item per page
-const hasMore = ref(true)
-const loading = ref(false)
-const loadMore = ref(null)
-
-async function fetchData() {
-  if (loading.value || !hasMore.value) return
-
-  loading.value = true
-
-  // Simulasi delay API
-  await new Promise(resolve => setTimeout(resolve, 500))
-
-  const start = (page.value - 1) * limit
-  const end = start + limit
-  const data = allData.slice(start, end)
-
-  if (data.length < limit) {
-    hasMore.value = false
-  }
-
-  items.value = [...items.value, ...data]
-  page.value++
-  loading.value = false
-}
-
-let observer = null
-
-onMounted(() => {
-  fetchData()
-
-  observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        fetchData()
-      }
-    })
-  }, {
-    root: null,
-    rootMargin: '0px',
-    threshold: 1.0,
-  })
-
-  if (loadMore.value) {
-    observer.observe(loadMore.value)
-  }
-})
-
-onUnmounted(() => {
-  if (observer && loadMore.value) {
-    observer.unobserve(loadMore.value)
-  }
-})
-</script>
-
-<style scoped>
-h1 {
-  text-align: center;
-  margin-bottom: 20px;
-}
-
-.item {
-  padding: 16px;
-  border-bottom: 1px solid #ddd;
-}
-
-p {
-  text-align: center;
-  padding: 16px;
-}
-</style>

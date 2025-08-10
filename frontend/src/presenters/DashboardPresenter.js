@@ -1,3 +1,5 @@
+import { nanoid } from "nanoid";
+
 export default class DashboardPresenter {
     #model;
     #view;
@@ -7,37 +9,33 @@ export default class DashboardPresenter {
     }
     async getPostings(limit, page, postings, hasMore) {
         if (!hasMore) return;
-        this.#view.loading(true);
         try {
             const offset = (page - 1) * limit;
             const res = await this.#model.getPostings(offset, limit);
             if (res.data.length < limit) {
-                this.#view.hasMore(false);
+                this.#view.hasMore.value = false;
             }
-            this.#view.page(page + 1);
-            console.log(res);
-            this.#view.postings([...postings, ...res.data]);
+            this.#view.page.value = page + 1;
+            this.#view.postings.value = [...postings, ...res.data];
         } catch (err) {
             console.error(err);
-        } finally {
-            this.#view.loading(false);
         }
     }
     handleChangeImages(images) {
         Array.from(images).map(image => {
-            this.#view.images(image);
+            this.#view.images.push(image);
             const blobImage = URL.createObjectURL(image);
-            this.#view.previewImages(blobImage);
+            this.#view.previewImages.push(blobImage);
         })
     }
     async createPosting(content, images) {
-        this.#view.showCreatePosting(false);
-        this.#view.showLoadingPosting(true);
+        this.#view.showCreatePosting.value = false;
+        this.#view.showLoadingPosting.value = true;
         try {
-            this.#view.progress(1 / 2 * 100);
+            this.#view.progress.value = 1 / 2 * 100;
             const res = await this.#model.createPosting(content);
             console.log(res.data);
-            this.#view.progress(2 / 2 * 100);
+            this.#view.progress.value = 2 / 2 * 100;
             const formData = new FormData();
             images.map(image => {
                 formData.append("images", image);
@@ -49,31 +47,22 @@ export default class DashboardPresenter {
         } catch (err) {
             console.error(err);
         } finally {
-            this.#view.progress(0);
-            this.#view.showLoadingPosting(false);
+            this.#view.progress.value = 0;
+            this.#view.showLoadingPosting.value = false;
         }
     }
     async getUser() {
         try {
             const res = await this.#model.getUser();
+            this.#view.user.value = res.data;
             console.log(res);
-            this.#view.user(res.data);
         } catch (err) {
             console.error(err);
         }
     }
-    isLike(likes, user) {
-        console.log(user);
-        console.log("total", likes);
-        const findLike = likes?.findIndex(value => value.user_id === user?.user_id);
-        if (findLike === -1) {
-            return false;
-        }
-        return true;
-    }
-    async createLike(id) {
+    async createLike(posting_id, id) {
         try {
-            const res = await this.#model.createLike(id);
+            const res = await this.#model.createLike(posting_id, id);
             console.log(res);
         } catch (err) {
             console.error(err);
@@ -81,25 +70,44 @@ export default class DashboardPresenter {
     }
     async deleteLike(id) {
         try {
-            const res = await this.#model.deleteLikePosting(id);
-            console.log(res);
+            await this.#model.deleteLikePosting(id);
         } catch (err) {
             console.error(err);
         }
     }
-    async handleActionsLike(id, postings, user_id) {
-        const findPosting = postings.findIndex(posting => posting.posting_id === id);
-        const findLike = postings[findPosting].likes.findIndex(like => like.user_id === user_id && like.posting_id === id);
+    async handleActionsLike(posting, postings, user, user_id_posting, socket) {
+        const findPosting = postings.findIndex(value => value.posting_id === posting.posting_id);
+        const findLike = postings[findPosting].likes.findIndex(like => like.user_id === user.user_id && like.posting_id === posting.posting_id);
         if (findLike < 0) {
+            const id = nanoid();
+            postings[findPosting].is_like = true;
             postings[findPosting].likes.push({
-                user_id: user_id,
-                posting_id: id
+                id: id,
+                user_id: user.user_id,
+                posting_id: posting.posting_id
             })
-            await this.createLike(id, user_id);
+            const message = "menyukai postingan anda";
+            const verb = "like";
+            const id_notif = nanoid();
+            socket.emit("notifications", (
+                { 
+                    id: id_notif, 
+                    receiver_id: user.user_id, 
+                    actor_id: user_id_posting, 
+                    object_id: posting.posting_id, 
+                    data: posting, 
+                    verb: verb, 
+                    message: message, 
+                    user: user 
+                }
+            ));
+            await this.createLike(posting.posting_id, user.user_id);
         } else {
-            postings[findPosting].likes = postings[findPosting].likes.filter((like, index) => index !== findLike);
-            await this.deleteLike(id);
+            postings[findPosting].is_like = false;
+            const like = postings[findPosting].likes[findLike];
+            postings[findPosting].likes = postings[findPosting].likes.filter(value => value.id !== like.id);
+            await this.deleteLike(like.id);
         }
-        this.#view.postings(postings);
+        this.#view.postings.value = postings;
     }
 }

@@ -1,7 +1,7 @@
-
-export default class CreateProfilePresenter {
+export default  class CreateCoverPresenter {
     #model;
     #view;
+
     constructor({ model, view }) {
         this.#model = model;
         this.#view = view;
@@ -10,25 +10,19 @@ export default class CreateProfilePresenter {
     async getUser() {
         try {
             const res = await this.#model.getUser();
-            console.log(res);
             this.#view.user.value = res.data;
-            this.#view.name.value = res.data.username;
+            console.log(res);
         } catch (err) {
             console.error(err);
-            this.#view.router.push("/Register");
         }
     }
-    async CreateProfile(data) {
+    async updateCover(id, image) {
         this.#view.loading.value = true;
         try {
             const formData = new FormData();
-            Object.entries(data).forEach(([key, value]) => {
-                console.log("Ini Key:", key, "dan ini valuenya:", value);
-                formData.append(key, value);
-            })
-            const res = await this.#model.CreateProfile(formData);
-            console.log(res);
-            this.#view.router.push("/");
+            formData.append('cover', image);
+            const res = await this.#model.updateCoverProfile(id, formData);
+            alert(res.message);
         } catch (err) {
             console.error(err);
         } finally {

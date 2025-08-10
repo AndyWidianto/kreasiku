@@ -1,10 +1,10 @@
 @import "tailwindcss";
 
 body {
-  background: #E5E5E5;
+  background: #f0ede7;
 }
 .color-app {
-  background: #E5E5E5;
+  background: #f0ede7;
 }
 .text-xss {
   font-size: 9px;

@@ -12,7 +12,7 @@ export default class DashboardLayoutPresenter {
             if (!res.data.profile) {
                 this.#view.router.push("/create/profile");
             }
-            this.#view.user(res.data);
+            this.#view.user.value = res.data;
         } catch (err) {
             console.error(err);
         }

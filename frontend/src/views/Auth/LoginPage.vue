@@ -1,5 +1,5 @@
 <script setup>
-import { reactive } from 'vue';
+import { reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import data from '../../models/data';
 import LoginPresenter from '../../presenters/LoginPresenter';
@@ -9,14 +9,14 @@ import { Hash, Lock, LockOpen, User2 } from 'lucide-vue-next';
 const state = reactive({
     username: '',
     password: '',
-    loading: false
 });
+const loading = ref(false);
 const navigate = useRouter();
 
 const presenter = new LoginPresenter({
     model: new data(),
     view: {
-        loading: (value) => state.loading = value,
+        loading: loading,
         navigate: navigate
     }
 })
@@ -59,7 +59,7 @@ async function Login() {
                     </div>
                     <div class="pt-10 p-2">
                         <button type="submit" class="flex items-center justify-center gap-2 w-full p-2 bg-blue-700 text-gray-300 rounded-sm">
-                            <LoadingSpinner v-if="state.loading" :LoadingSize="'6'" :hieghtContent="'6'" :widthContent="'6'" />
+                            <LoadingSpinner v-if="loading" :LoadingSize="'6'" :hieghtContent="'6'" :widthContent="'6'" />
                             Log In
                         </button>
                     </div>

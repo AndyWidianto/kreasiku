@@ -2,65 +2,125 @@
 import { EllipsisVertical, Heart, MessageCircle, Share2, SendHorizonal } from 'lucide-vue-next';
 import CommentsDashboardPresenter from '../../presenters/CommentsDashboardPresenter';
 import data from '../../models/data';
-import { onMounted, reactive, ref } from 'vue';
+import { computed, inject, nextTick, onMounted, reactive, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
+import Loading from '../components/loadings/Loading.vue';
 
 const route = useRoute();
 const { id } = route.params;
+const socket = inject("socket");
 
 const posting = ref(null);
+const comments = ref([]);
 const user = ref(null);
 const refContent = ref(null);
-const state = reactive({
-    showDropdownUser: false,
-    content: '',
-    suggestions: null
-})
+const showDropdownUser = ref(false);
+const content = ref('');
+const suggestions = ref(null);
+const itemRefs = ref({});
+const mentionActive = ref(false);
+const mentions = ref([]);
+const commentId = ref(null);
+const limit = ref(8);
+const page = ref(1);
+const hasMore = ref(true);
+const loadMore = ref(null);
+const loading = ref(false);
+const limitMentions = ref(5);
+const pageMentions = ref(1);
+const loadingMentions = ref(false);
 
 const presenter = new CommentsDashboardPresenter({
     model: new data(),
     view: {
-        posting: (value) => posting.value = value,
-        user: (value) => user.value = value,
-        content: (value) => state.content = value,
-        suggestions: (value) => state.suggestions = value,
-        showDropdownUser: (value) => state.showDropdownUser = value
+        posting: posting,
+        user: user,
+        content: content,
+        suggestions: suggestions,
+        showDropdownUser: showDropdownUser,
+        hasMore: hasMore,
+        page: page,
+        loading: loading,
+        mentions: mentions,
+        comments: comments,
+        pageMentions: pageMentions,
+        loadingMentions: loadingMentions,
     }
 });
-function isLike(likes) {
-    if (!likes) return;
-    const findLike = likes.find(like => like.user_id === user.value?.user_id);
-    if (!findLike) {
-        return false;
-    }
-    return true;
-};
 function handleSelectKey() {
-    presenter.handleSelectKey(state.content);
+    presenter.handleSelectKey(content.value);
 }
-function likePosting(id) {
-    presenter.handleActionsLike(id, posting.value, user.value.user_id);
+function likePosting() {
+    presenter.handleActionsLike(posting.value, user.value.user_id);
 }
-function handleSelectUser(username) {
-    state.content = state.content.replace(/@(\w*)$/, `@${username} `);
+function handleSelectUser(user) {
+    content.value = content.value.replace(/@(\w*)$/, `@${user.username} `);
+    mentions.value.push({ username: user.username, id: user.user_id });
     refContent.value.focus();
-    state.showDropdownUser = false;
+    showDropdownUser.value = false;
 }
 function createComment() {
-    presenter.createComment(posting.value, user.value, state.content);
+    if (mentionActive.value && commentId.value) {
+        return presenter.createMention(socket, commentId.value, posting.value, user.value, content.value, mentions.value);
+    }
+    presenter.createComment(socket, posting.value, user.value, content.value);
 }
-onMounted(() => {
+function handleMantion(user, id) {
+    content.value = `@${user.username} `;
+    refContent.value.focus();
+    mentionActive.value = true;
+    commentId.value = id;
+    mentions.value.push({ username: user.username, id: user.user_id });
+}
+function handleAddMention(id) {
+    presenter.getMentions(id, limitMentions.value, pageMentions.value, comments.value);
+}
+function handleTotalMentions(comment) {
+    const mentions = comment.mentions;
+    const total = mentions ? comment.total_mentions - mentions.length : comment.total_mentions;
+    return total;
+}
+let observer;
+onMounted(async () => {
+    await nextTick();
     presenter.getUser();
     presenter.getPosting(id);
+    presenter.getComments(limit.value, page.value, id, hasMore.value, comments.value);
+    observer = new IntersectionObserver((enteries) => {
+        enteries.forEach(entry => {
+            if (entry.isIntersecting) {
+                presenter.getComments(limit.value, page.value, id, hasMore.value, comments.value);
+            }
+        })
+    }, {
+        root: null,
+        rootMargin: '0px',
+        threshold: 0.1
+    })
+    if (loadMore.value) {
+        observer.observe(loadMore.value);
+    }
+})
+watch(() => route.params.id, (newValue, oldValue) => {
+    if (newValue === oldValue) return;
+    presenter.getPosting(newValue);
+});
+watch(content, (newValue) => {
+    if (mentionActive.value && !newValue.startsWith('@')) {
+        mentionActive.value = false;
+        commentId.value = null;
+    }
+    const newMentions = mentions.value.filter(user => newValue.includes(`@${user?.username}`));
+    mentions.value = newMentions;
 })
 </script>
 
 <template>
-    <div class="flex justify-center p-2">
-        <div class="w-2xl">
-            <div class="flex items-center gap-3 p-2">
+    <div class="flex justify-center w-full p-2">
+        <div class="w-full md:w-2xl">
+            <RouterLink :to="`/profile/${posting?.user.username}`" class="flex items-center gap-3 p-2">
                 <div class="w-10 h-10 shrink-0">
-                    <img src="/images/tuanCrabs.jpeg" alt="" class="w-full h-full object-cover rounded-full border-1">
+                    <img :src="posting?.user.profile.profile_picture ? posting?.user.profile.profile_picture : '/images/book.jpg'" alt="image posting" class="w-full h-full object-cover rounded-full border-1">
                 </div>
                 <div class="w-full">
                     <h2 class="text-lg font-semibold">{{ posting?.user.profile?.name }}</h2>
@@ -69,7 +129,7 @@ onMounted(() => {
                 <button>
                     <EllipsisVertical class="w-6 h-6" />
                 </button>
-            </div>
+            </RouterLink>
             <div class="w-full">
                 <p class="text-gray-800">
                     <span v-for="content in posting?.content.split(/(#\w+)/g)">
@@ -79,36 +139,39 @@ onMounted(() => {
                     </span>
                 </p>
                 <!-- untuk gambar kurang dari 2 -->
-                <div v-if="posting?.images.length < 1" class="flex flex-wrap justify-around items-center">
-                    <div class="flex items-center w-200 h-200 bg-black">
+                <div v-if="posting?.images.length == 1" class="flex flex-wrap justify-around items-center">
+                    <div class="flex items-center w-full min-h-80 max-h-200 bg-black">
                         <img v-for="image in posting.images" :src="image.image" :key="image.image_id"
-                            alt="image posting" class="w-full h-auto object-cover border-1">
+                            alt="image posting" class="w-full h-auto object-cover">
                     </div>
                 </div>
                 <!-- untuk gambar 2 -->
-                <div v-if="posting?.images.length < 3" class="flex flex-wrap justify-center items-center">
-                    <div class="grid grid-cols-2 w-200 h-200 bg-black">
+                <div v-if="posting?.images.length < 3 && posting?.images.length > 1"
+                    class="flex flex-wrap justify-center items-center">
+                    <div class="grid grid-cols-2 gap-[1px] w-full min-h-80 max-h-200 bg-black">
                         <img v-for="image in posting.images" :src="image.image" :key="image.image_id"
-                            alt="image posting" class="w-full h-full object-cover border-1">
+                            @click="handleShowImage(posting.images, image.image_id)" alt="image posting"
+                            class="w-full h-full object-cover">
                     </div>
                 </div>
                 <!-- untuk gambar lebih dari 2 -->
                 <div v-if="posting?.images.length > 2" class="flex items-center justify-center">
-                    <div class="grid grid-cols-3 grid-rows-2 w-200 bg-black h-150">
+                    <div class="grid grid-cols-3 gap-[1px] grid-rows-2 w-full bg-black min-h-80 max-h-200">
                         <img v-for="(image, indexImage) in posting.images.slice(0, 3)" :key="image.image_id"
-                            :src="image.image" alt="image posting" class="h-full object-cover"
+                            @click="handleShowImage(posting.images, image.image_id)" :src="image.image"
+                            alt="image posting" class="h-full w-full object-cover"
                             :class="[indexImage === 0 ? 'col-span-2 row-span-1 row-span-2' : '']">
                     </div>
                 </div>
                 <div class="flex items-center gap-2 text-sm">
                     <button>{{ posting?.likes.length }} likes</button>
-                    <button>{{ posting?.comments.length }} comments</button>
+                    <button>{{ posting?.total_comments + posting?.total_mentions }} comments</button>
                     <button>111 shares</button>
                 </div>
                 <div class="flex items-center">
-                    <button @click="likePosting(posting?.posting_id)" class="p-2 px-4">
+                    <button @click="likePosting" class="p-2 px-4">
                         <Heart class="w-6 h-6"
-                            :class="[isLike(posting?.likes) ? 'fill-orange-600 text-orange-600' : 'text-gray-800']" />
+                            :class="[posting?.is_like ? 'fill-orange-600 text-orange-600' : 'text-gray-800']" />
                     </button>
                     <button class="p-2 px-4">
                         <MessageCircle class="w-6 h-6 text-gray-800" />
@@ -118,74 +181,85 @@ onMounted(() => {
                     </button>
                 </div>
             </div>
-            <div class="p-2 border-t-1 border-gray-600">
-                <div class="pl-1" v-for="comment in posting?.comments">
-                    <div class="flex items-start w-full gap-1">
-                        <img :src="comment.user.profile_picture ? comment.user.profile_picutre : '/images/tuanCrabs.jpeg'"
-                            alt="" class="w-10 h-10 rounded-full shrink-0">
-                        <div class="p-0 m-0 w-full">
-                            <h2 class="font-semibold">{{ comment.user.username }}</h2>
+            <div class="p-2 pb-13 border-t border-gray-400">
+                <div class="pl-1 p-1" v-for="comment in comments" :key="comment.comment_id">
+                    <div class="flex items-start w-full gap-2">
+                        <img :src="comment.user.profile.profile_picture ? comment.user.profile.profile_picture : '/images/book.jpg'"
+                            alt="" class="w-9 h-9 rounded-full space-x-2 shrink-0">
+                        <div class="p-0 m-0 w-full leading-none">
+                            <RouterLink :to="`/profile/${comment.user.username}`" class="font-semibold">{{ comment.user.username }}</RouterLink>
                             <p class="text-gray-800">
                                 <span v-for="content in comment.content.split(/(@\w+)/g)">
-                                    <RouterLink v-if="content.startsWith('@')" :to="`/profile/${content.slice(1)}`" class="text-blue-600 hover:underline">{{ content }}</RouterLink>
+                                    <RouterLink v-if="content.startsWith('@')" :to="`/profile/${content.slice(1)}`"
+                                        class="text-blue-600 hover:underline">{{ content }}</RouterLink>
                                     <span v-else>{{ content }}</span>
                                 </span>
                             </p>
                             <div class="flex items-center gap-2">
-                                <button class="text-orange-600">balas</button>
-                                <button class="w-full text-start text-xs font-semibold text-gray-700 p-1">lihat
-                                    semuanya</button>
+                                <button @click="handleMantion(comment.user, comment.comment_id)" class="text-xs text-orange-600 font-semibold">balas</button>
                             </div>
                         </div>
                         <div class="p-1">
                             <button>
                                 <Heart class="w-5 h-5" />
                             </button>
-                            <div class="text-xs">{{ comment.likes?.length }}</div>
+                            <div class="text-center text-xs">{{ comment.likes?.length }}</div>
                         </div>
                     </div>
-                    <!-- <div class="flex items-start gap-1 p-4">
-                        <img src="/images/tuanCrabs.jpeg" alt="" class="w-10 h-10 rounded-full shrink-0">
-                        <div class="">
-                            <h2 class="font-semibold">Andy Widianto</h2>
-                            <p class="text-gray-800">Lorem ipsum dolor sit amet consectetur adipisicing elit. Aut
-                                voluptatem
-                                pariatur magnam sit atque doloribus reprehenderit ducimus eum porro sapiente, quis
-                                deserunt
-                                nihil? Omnis porro deserunt ipsam, quam animi eaque.</p>
+                    <div v-for="mention in comment?.mentions" class="flex items-start justify-between gap-2 pl-4 py-1" :key="mention.id">
+                        <img :src="mention.user.profile.profile_picture ? mention.user.profile.profile_picture : '/images/book.jpg'" alt="" class="w-9 h-9 rounded-full shrink-0">
+                        <div class="w-full leading-none">
+                            <RouterLink :to="`/profile/${mention.user.username}`" class="font-semibold">{{ mention.user.username }}</RouterLink>
+                            <p class="text-gray-800">
+                                <span v-for="content in mention.content.split(/(@\w+)/g)">
+                                    <RouterLink v-if="content.startsWith('@')" :to="`/profile/${content.slice(1)}`"
+                                        class="text-blue-600 hover:underline">{{ content }}</RouterLink>
+                                    <span v-else>{{ content }}</span>
+                                </span>
+                            </p>
                             <div class="flex items-center gap-2">
-                                <button class="text-orange-600">balas</button>
+                                <button @click="handleMantion(mention.user, comment.comment_id)" class="text-xs text-orange-600 font-semibold">balas</button>
                             </div>
                         </div>
                         <div class="p-1">
                             <button>
                                 <Heart class="w-5 h-5" />
                             </button>
-                            <div class="text-xs">11rb</div>
+                            <div class="text-center text-xs">0</div>
                         </div>
-                    </div> -->
+                    </div>
+                    <button v-if="handleTotalMentions(comment) > 1" @click="handleAddMention(comment.comment_id)" class="w-full text-start text-xs font-semibold text-gray-700 p-1">lihat balasan({{ handleTotalMentions(comment) }})</button>
                 </div>
+                <p class="flex justify-center p-2" ref="loadMore" v-if="hasMore">
+                    <Loading :size="6" :borderSize="3" />
+                </p>
             </div>
-            <form @submit.prevent="createComment" class="relative">
-                <div class="w-70 bg-white border-1 border-gray-400 absolute bottom-11 left-0 overflow-hidden" :hidden="!state.showDropdownUser">
-                    <ul class="overflow-x-auto max-h-60">
-                        <li v-for="name in state.suggestions">
-                            <button type="button" @click="handleSelectUser(name?.username)" class="flex items-center gap-2 p-1">
-                                <img src="/images/tuanCrabs.jpeg" alt="" class="w-10 h-10 object-cover rounded-full shrink-0">
-                                <h2 class="font-semibold">{{ name.username }}</h2>
-                            </button>
-                        </li>
-                    </ul>
-                </div>
-                <div class="flex items-center relative">
-                    <input type="text" name="content" id="content" autocomplete="off" ref="refContent" @input="handleSelectKey" v-model="state.content"
-                        class="w-full p-2 pr-10 border-1 border-gray-400 focus:outline focus:outline-orange-500 rounded-sm"
-                        placeholder="comments...">
-                    <button type="submit" class="absolute right-0 p-2 text-blue-600">
-                        <SendHorizonal class="w-5 h-5" />
-                    </button>
-                </div>
-            </form>
+            <div class="fixed bottom-0 w-full left-0 md:left-[320px] md:w-[calc(100%-320px)] px-3 py-2 border-t border-gray-400 color-app">
+                <form @submit.prevent="createComment" class="relative">
+                    <div class="w-70 bg-white border-1 border-gray-400 absolute bottom-11 left-0 overflow-hidden"
+                        :hidden="!showDropdownUser">
+                        <ul class="overflow-x-auto max-h-60">
+                            <li v-for="user in suggestions">
+                                <button type="button" @click="handleSelectUser(user)"
+                                    class="flex items-center gap-2 p-1">
+                                    <img src="/images/tuanCrabs.jpeg" alt=""
+                                        class="w-10 h-10 object-cover rounded-full shrink-0">
+                                    <h2 class="font-semibold">{{ user.username }}</h2>
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="flex items-center relative">
+                        <input type="text" name="content" id="content" autocomplete="off" ref="refContent"
+                            @input="handleSelectKey" v-model="content"
+                            class="w-full p-2 pr-10 border-1 border-gray-400 focus:outline focus:outline-orange-500 rounded-sm"
+                            placeholder="comments...">
+                        <button type="submit" class="absolute right-0 p-2 text-blue-600">
+                            <SendHorizonal class="w-5 h-5" />
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 </template>
