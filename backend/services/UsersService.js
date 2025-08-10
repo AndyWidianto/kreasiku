@@ -22,7 +22,7 @@ export const findUserForLogin = async (user) => {
                 }
             ]
         }
-    })
+    });
 }
 export const findUser = async (user) => {
     return await users.findOne({
@@ -42,7 +42,7 @@ export const findUser = async (user) => {
         }
     })
 }
-export const findUsersFromUsername = async (user) => {
+export const searchUsersFromUsername = async (user) => {
     return await users.findAll({
         attributes: ["user_id", "username"],
         where: {
@@ -55,6 +55,16 @@ export const findUsersFromUsername = async (user) => {
         },
         limit: 10
     })
+}
+export const findUserFromUsername = async (username) => {
+    const user = await users.findOne({
+        where: { username },
+        attributes: ["user_id", "username"],
+        include: [
+            { model: profiles }
+        ]
+    })
+    return user;
 }
 export const findUsers = async () => {
     return await users.findAll({

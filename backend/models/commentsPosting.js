@@ -5,8 +5,7 @@ import users from "./users.js";
 
 const comments = db.define("comments", {
     comment_id: {
-        type: DataTypes.INTEGER,
-        autoIncrement: true,
+        type: DataTypes.STRING,
         primaryKey: true
     },
     posting_id: {

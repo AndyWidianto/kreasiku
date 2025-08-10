@@ -1,45 +1,18 @@
-import { findPostingPrimary, findPostings, findPostingsUser, insertPosting } from "../services/PostingsService.js";
-
+import { findPostingPrimary, findPostings, findPostingsUser, insertPosting, searchPostings } from "../services/PostingsService.js";
 
 export const getPostings = async (req, res) => {
     const { search, offset, limit } = req.query;
+    const user = req.user || null;
     try {
         if (search) {
-            const postings = await findPostings(search);
-            if (!postings) {
-                return res.status(200).json({
-                    message: "Yah tidak ada nih"
-                });
-            }
-            const newPostings = postings.map(posting => {
-                posting.dataValues.images = posting.dataValues.images.map(image => {
-                    image.image = `${req.protocol}://${req.get('host')}/${image.image}`;
-                    return {
-                        ...image.dataValues
-                    }
-                });
-                return {
-                    ...posting.dataValues
-                }
-            })
+            const postings = await searchPostings(req.protocol, req.get('host'), search, user?.user_id);
             return res.status(200).json({
-                data: newPostings
+                data: postings
             })
         }
-        const postings = await findPostings(parseInt(limit), parseInt(offset));
-        const newPostings = postings.map(posting => {
-            posting.dataValues.images = posting.dataValues.images.map(image => {
-                image.image = `${req.protocol}://${req.get('host')}/${image.image}`;
-                return {
-                    ...image.dataValues
-                }
-            });
-            return {
-                ...posting.dataValues
-            }
-        })
+        const postings = await findPostings(req.protocol, req.get('host'), parseInt(limit), parseInt(offset), user?.user_id);
         res.status(200).json({
-            data: newPostings
+            data: postings
         })
     } catch (err) {
         console.error(err);
@@ -62,14 +35,10 @@ export const createPosting = async (req, res) => {
 }
 export const getPosting = async (req, res) => {
     const { id } = req.params;
+    const user = req.user ? req.user : null;
+    console.log(user);
     try {
-        const posting = await findPostingPrimary(id);
-        posting.images = posting.images.map(image => {
-            image.image = `${req.protocol}://${req.get('host')}/${image.image}`
-            return {
-                ...image.dataValues
-            }
-        });
+        const posting = await findPostingPrimary(req.protocol, req.get('host'), id, user?.user_id);
         res.status(200).json({
             data: posting
         })

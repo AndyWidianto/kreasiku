@@ -4,9 +4,8 @@ import postings from "./posting.js";
 import users from "./users.js";
 
 const likesPosting = db.define("likes", {
-    like_id: {
-        type: DataTypes.INTEGER,
-        autoIncrement: true,
+    id: {
+        type: DataTypes.STRING,
         primaryKey: true
     },
     user_id: {
@@ -27,6 +26,8 @@ const likesPosting = db.define("likes", {
     timestamps: true
 });
 
+likesPosting.belongsTo(users, { foreignKey: "user_id" });
+likesPosting.belongsTo(postings, { foreignKey: "posting_id" });
 users.hasMany(likesPosting, { foreignKey: "user_id" });
 postings.hasMany(likesPosting, { foreignKey: "posting_id" });
 

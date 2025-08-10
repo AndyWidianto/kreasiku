@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { findUser, findUserForLogin, findUsersFromUsername, findUserPk, findUsers, insertUser, updateRefreshToken, findUserToToken } from "../services/UsersService.js";
+import { findUser, findUserForLogin, findUserPk, findUsers, insertUser, updateRefreshToken, findUserToToken, searchUsersFromUsername, findUserFromUsername } from "../services/UsersService.js";
 import { createAccessToken, createRefreshToken } from "../middleware/middleware.js";
 import { insertProfile } from "../services/ProfilesService.js";
 
@@ -85,7 +85,7 @@ export const getUsers = async (req, res) => {
     const { username } = req.query;
     try {
         if (username) {
-            const user = await findUsersFromUsername(username);
+            const user = await searchUsersFromUsername(username);
             return res.status(200).json({
                 data: user
             })
@@ -109,9 +109,11 @@ export const getUser = async (req, res) => {
     const { user_id } = req.user;
     try {
         const user = await findUserPk(user_id);
-        user.profile.profile_picture = user.profile.profile_picture ? `${req.protocol}://${req.get('host')}/${user.profile.profile_picture}` : null;
+        const userData = user.toJSON();
+        userData.profile.cover_picture = userData.profile.cover_picture ? `${req.protocol}://${req.get('host')}/${userData.profile.cover_picture}` : null;
+        userData.profile.profile_picture = user.profile.profile_picture ? `${req.protocol}://${req.get('host')}/${user.profile.profile_picture}` : null;
         res.status(200).json({
-            data: user
+            data: userData
         });
     } catch (err) {
         console.error(err);
@@ -140,5 +142,34 @@ export const updateAccessToken = async (req, res) => {
     } catch (err) {
         console.error(err);
         return res.status(401);
+    }
+}
+
+export const getUserFromUsername = async (req, res) => {
+    const { username } = req.params;
+    const { authorization } = req.headers;
+    try {
+        const user = await findUserFromUsername(username);
+        const userData = user.toJSON();
+        userData.profile.profile_picture = userData.profile.profile_picture ? `${req.protocol}://${req.get('host')}/${userData.profile.profile_picture}` : null;
+        userData.profile.cover_picture = userData.profile.cover_picture ? `${req.protocol}://${req.get('host')}/${userData.profile.cover_picture}` : null;
+        if (!user) {
+            return res.status(404).json({ message: "user not found" });
+        }
+        if (!authorization) {
+            userData.mine = false;
+            return res.json({
+                data: userData
+            })
+        }
+        const token = authorization.split(" ")[1];
+        const verifyToken = jwt.verify(token, process.env.SECRET_JWT);
+        userData.mine = verifyToken.user_id === userData.user_id;
+        return res.json({
+            data: userData
+        })
+    } catch (err) {
+        console.error(err);
+        return res.status(500);
     }
 }

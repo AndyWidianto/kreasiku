@@ -17,7 +17,7 @@ const likesComment = db.define("likes", {
         }
     },
     comment_id: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.STRING,
         references: {
             model: comments,
             key: "comment_id"

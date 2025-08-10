@@ -1,13 +1,12 @@
 import { delLikePosting, findLikePosting, findLikesPosting, insertLikePosting } from "../services/LikesPostingService.js";
 
 export const createLikesPosting = async (req, res) => {
-    const { posting_id } = req.body;
+    const { id, posting_id } = req.body;
     const { user_id } = req.user;
     try {
         const findLike = await findLikePosting(posting_id, user_id);
-        console.log(findLike);
         if (!findLike) {
-            await insertLikePosting({ posting_id, user_id });
+            await insertLikePosting({ id, posting_id, user_id });
         }
         res.status(201).json({
             message: "berhasil like"
@@ -39,9 +38,8 @@ export const getLikesPosting = async (req, res) => {
 }
 export const deleteLikePosting = async (req, res) => {
     const { id } = req.params;
-    const { user_id } = req.user;
     try {
-        await delLikePosting(id, user_id);
+        await delLikePosting(id);
         res.status(201).json({
             message: "Berhasil menghapus like"
         });

@@ -1,7 +1,7 @@
 import { findNotifReadFalse, findNotifs, insertNotif, updateNotif } from "../services/NotificationsService.js";
 
 export const createNotif = async (req, res) => {
-    const { actor_id, verb, object_id, message, is_read } = req.body;
+    const { id, actor_id, verb, object_id, message, is_read } = req.body;
     const { user_id } = req.user;
     if (!actor_id || !verb) {
         return res.status(404).json({
@@ -9,7 +9,7 @@ export const createNotif = async (req, res) => {
         })
     }
     try {
-        const notif = await insertNotif(user_id, actor_id, verb, object_id, message, is_read);
+        const notif = await insertNotif(id, user_id, actor_id, verb, object_id, message, is_read);
         res.status(201).json({
             message: "Berhasil menambahkan notification",
             data: notif
@@ -22,7 +22,7 @@ export const createNotif = async (req, res) => {
 export const getNotifs = async (req, res) => {
     const { user_id } = req.user;
     try {
-        const notifs = await findNotifs(user_id);
+        const notifs = await findNotifs(req.protocol, req.get('host'), user_id);
         res.status(200).json({
             data: notifs
         })

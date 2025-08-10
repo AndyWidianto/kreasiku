@@ -18,11 +18,10 @@ export const findLikePosting = async (posting_id, user_id) => {
         }
     })
 }
-export const delLikePosting = async (id, user_id) => {
+export const delLikePosting = async (id) => {
     return await likesPosting.destroy({
         where: {
-            user_id: user_id,
-            posting_id: id
+            id
         }
     })
 }
