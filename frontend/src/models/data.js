@@ -57,8 +57,9 @@ export default class data {
         });
         return res.data;
     }
-    async getComments(id, offset, limit) {
-        const res = await PublicApi.get(`/comments/${id}?offset=${offset}&limit=${limit}`, {
+    async getComments(id, offset, limit, target) {
+        const newTarget = target ? `&target=${target}` : '';
+        const res = await PublicApi.get(`/comments/${id}?offset=${offset}&limit=${limit}${newTarget}`, {
             headers: {
                 Authorization: `Bearer ${this.token}`
             }
@@ -118,6 +119,13 @@ export default class data {
         const res = await AuthApi.get('/notifications');
         return res.data;
     }
+    async updateNotif(notif_id, is_read) {
+        const res = await AuthApi.put('/notification', {
+            notif_id,
+            is_read
+        });
+        return res.data;
+    }    
     async CreateProfile(data) {
         const res = await AuthApi.post('/profile', data, {
             headers: {
@@ -152,6 +160,37 @@ export default class data {
                 Authorization: `Bearer ${this.token}`
             }
         });
+        return res.data;
+    }
+    async getMention(id) {
+        const res = await PublicApi.get(`/mention/${id}`, {
+            headers: {
+                Authorization: `Bearer ${this.token}`
+            }
+        });
+        return res.data;
+    }
+    async getFollowersNotFollowing() {
+        const res = await AuthApi.get('/not/followings');
+        return res.data;
+    }
+    async getFollowings(username, limit, offset, search) {
+        const res = await AuthApi.get(`/${username}/followings?limit=${limit}&offset=${offset}&search=${search}`);
+        return res.data;
+    }
+    async getFollowers(username, limit, offset, search) {
+        const res = await AuthApi.get(`/${username}/followers?limit=${limit}&offset=${offset}&search=${search}`);
+        return res.data;
+    }
+    async createFollow(id, following_id) {
+        const res = await AuthApi.post('/follow', {
+            id,
+            following_id
+        });
+        return res.data;
+    }
+    async deleteFollow(id) {
+        const res = await AuthApi.delete(`/follow/${id}`);
         return res.data;
     }
 }

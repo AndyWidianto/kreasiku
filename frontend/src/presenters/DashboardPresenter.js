@@ -16,7 +16,18 @@ export default class DashboardPresenter {
                 this.#view.hasMore.value = false;
             }
             this.#view.page.value = page + 1;
-            this.#view.postings.value = [...postings, ...res.data];
+            res.data.map((data, index) => {
+                const showSetting = false;
+                this.#view.indexPostings.value[data.posting_id] = index;
+                return {
+                    showSetting,
+                    ...data
+                }
+            });
+            const results = [...postings, ...res.data];
+            this.#view.postings.value = results;
+            sessionStorage.setItem("postings", JSON.stringify(results));
+            sessionStorage.setItem("page", page + 1);
         } catch (err) {
             console.error(err);
         }

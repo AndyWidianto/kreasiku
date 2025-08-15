@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref } from 'vue';
+import { KeepAlive, onMounted, ref } from 'vue';
 import data from '../../models/data';
 import DashboardLayoutPresenter from '../../presenters/DashboardLayoutPresenter';
 import NavbarDashboard from '../Navbar/NavbarDashboard.vue';
@@ -27,7 +27,9 @@ onMounted(() => {
                 <NavbarDashboard :user="user" />
             </header>
             <main class="pt-15 flex justify-center">
-                <RouterView />
+                <KeepAlive>
+                    <RouterView />
+                </KeepAlive>
             </main> 
             <footer></footer>
         </div>

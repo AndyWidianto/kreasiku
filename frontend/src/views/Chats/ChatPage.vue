@@ -68,6 +68,13 @@ function updateWidth() {
 function handleDeleteActive() {
   userActive.value = null;
 }
+function handleCutContent(content) {
+  if (width.value > 300 && width.value < 800) {
+    return content;
+  }
+  return `${content.slice(0, 30)}...`;
+
+}
 onMounted(() => {
   presenter.getConverstation();
   window.addEventListener('resize', updateWidth);
@@ -102,7 +109,7 @@ onMounted(() => {
                 :class="userActive?.id === user.id ? 'text-orange-600 font-semibold' : (user.isUnread ? 'text-orange-600 font-semibold' : 'font-bold')">
                 {{ user.user.username }}
               </span>
-              <small class="text-gray-700 lowercase">{{ user.messages[user.messages.length - 1]?.content }}</small>
+              <small class="text-gray-700 lowercase">{{ handleCutContent(user.messages[user.messages.length - 1]?.content) }}</small>
             </div>
             <div v-if="user.unreadCount > 0"
               class="ml-auto bg-orange-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center select-none">

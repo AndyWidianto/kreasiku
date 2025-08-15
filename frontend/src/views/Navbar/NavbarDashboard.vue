@@ -48,8 +48,7 @@ function handleClick(e) {
     }
 }
 function handleUpdateNotif(index) {
-    notifications.value[index].is_read = "true";
-    NotificationsNotRead.value = NotificationsNotRead.value.filter(notif => notif.id !== notifications.value[index].id);
+    presenter.updateNotif(notifications.value[index].id, notifications.value, NotificationsNotRead.value);
 }
 function handleCutContent(data) {
     if (!data) return;
@@ -64,7 +63,6 @@ onMounted(() => {
     presenter.getNotificationNotRead();
     window.addEventListener("click", handleClick);
     socket.on("notifications", (newNotif) => {
-        console.log(newNotif);
         const icon = newNotif.receiver.profile.profile_picture ? newNotif.receiver.profile.profile_picture : '/images/book.jpg';
         new Notification(newNotif.receiver.username, 
             { 
@@ -78,14 +76,14 @@ onMounted(() => {
 </script>
 <template>
     <ul
-        class="flex items-center gap-4 p-2 px-6 color-app border-b-1 border-gray-400 fixed z-10 transition-all duration-300 left-[0px] top-0 w-[calc(100%-0px)] md:left-[320px] md:w-[calc(100%-320px)]">
+        class="flex items-center gap-4 p-2 px-6 color-app z-10 transition-all duration-300 fixed left-[0px] top-0 w-[calc(100%-0px)] md:left-[320px] md:w-[calc(100%-320px)]">
         <li class="w-3/5 md:w-2/5">
             <form class="flex items-center relative">
-                <button class="absolute left-4">
-                    <Search class="w-5 h-5" />
+                <button class="absolute left-4 text-gray-800">
+                    <Search class="w-4 h-4" />
                 </button>
                 <input type="search" name="search" id="search" placeholder="Search"
-                    class="p-2 pl-10 border-1 border-gray-400 bg-gray-100 w-full rounded-full">
+                    class="p-[8px] pl-10 border-1 border-gray-300 bg-white w-full rounded-full">
             </form>
         </li>
         <li class="md:hidden">
@@ -154,7 +152,7 @@ onMounted(() => {
                             <div class="">"{{ handleCutContent(notification.data) }}"</div>
                         </div>
                     </RouterLink>
-                    <RouterLink :to="`/posting/${notification.object_id}`" @click="handleUpdateNotif(index)" v-else-if="notification?.verb === 'mention'"
+                    <RouterLink :to="`/posting/${notification.object_id}?comment=${JSON.parse(notification.data).comment_id}&mention=${JSON.parse(notification.data).id}`" @click="handleUpdateNotif(index)" v-else-if="notification?.verb === 'mention'"
                         class="flex gap-2 p-2" :class="[notification.is_read === 'false' ? 'bg-orange-100' : '']">
                         <div class="flex items-end relative">
                             <img :src="notification.receiver.profile.profile_url || '/images/book.jpg'" alt="profile" class="w-10 h-10 object-cover p-2 rounded-full">
@@ -173,12 +171,12 @@ onMounted(() => {
                 <li class="flex justify-center">No more notification</li>
             </ul>
         </li>
-        <li class="shrink-0 w-10 h-10 relative" ref="profile">
+        <li class="grid items-center shrink-0 w-10 h-10 relative" ref="profile">
             <button @click="() => refDropDownProfile = !refDropDownProfile">
                 <img :src="[props.user?.profile?.profile_picture ? props.user.profile?.profile_picture : '/images/tuanCrabs.jpeg']"
-                    alt="" class="w-10 h-10 object-cover rounded-full">
+                    alt="" class="w-8 h-8 object-cover rounded-full">
             </button>
-            <ul class="absolute right-0 w-30 max-h-100 bg-gray-100 text-center"
+            <ul class="absolute top-10 right-0 w-30 max-h-100 bg-gray-100 text-center"
                 :class="[refDropDownProfile ? 'block' : 'hidden']">
                 <li class="w-full">
                     <RouterLink :to="`/profile/${props.user?.username}`"

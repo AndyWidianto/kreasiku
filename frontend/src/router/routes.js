@@ -11,6 +11,9 @@ import SearchPage from "../views/search/SearchPage.vue";
 import ChatPage from "../views/Chats/ChatPage.vue";
 import CreateCover from "../views/Profile/CreateCover.vue";
 import NotificationPage from "../views/Notification/NotificationPage.vue";
+import NotFollowingPage from "../views/Follow/NotFollowingPage.vue";
+import FollowerPage from "../views/Follow/FollowerPage.vue";
+import FollowingsPage from "../views/Follow/FollowingsPage.vue";
 
 
 const routes = [
@@ -29,6 +32,26 @@ const routes = [
             {
                 path: "/posting/:id",
                 component: CommentsDashboard
+            },
+            {
+                path: "/not/followers",
+                component: NotFollowingPage
+            },
+            {
+                path: "/followers/:username",
+                component: FollowerPage
+            },
+            {
+                path: "/followings/:username",
+                component: FollowingsPage
+            },
+            {
+                path: "/notifications",
+                component: NotificationPage
+            },
+            {
+                path: "/percobaan",
+                component: Percobaan
             }
         ]
     },
@@ -49,20 +72,12 @@ const routes = [
         component: SearchPage
     },
     {
-        path: "/percobaan",
-        component: Percobaan
-    },
-    {
         path: "/chat",
         component: ChatPage
     },
     {
         path: "/edit/cover",
         component: CreateCover
-    },
-    {
-        path: "/notifications",
-        component: NotificationPage
     }
 ];
 

@@ -96,7 +96,7 @@ export default class CommentsDashboardPresenter {
             console.error(err);
         }
     }
-    async createMention(socket, comment_id, posting, user, content, mentions) {
+    async createMention(socket, comment_id, comments, user, content, mentions) {
         try {
             const mention_id = nanoid();
             const state = {
@@ -106,26 +106,30 @@ export default class CommentsDashboardPresenter {
                 content: content,
                 user: user,
             }
-            const findIndex = posting.comments.findIndex(comment => comment.comment_id === comment_id);
-            posting.comments[findIndex].mentions.push(state);
-            this.#view.posting.value = posting;
+            const findIndex = comments.findIndex(comment => comment.comment_id === comment_id);
+            if (!comments[findIndex].mentions) {
+                comments[findIndex].mentions = [];
+            }
+            comments[findIndex].mentions.push(state);
+            comments[findIndex].total_mentions = comments[findIndex].total_mentions + 1;
+            this.#view.comments.value = comments;
             this.#view.content.value = '';
             await this.#model.createMention(mention_id, comment_id, content);
             mentions.map(mention => {
                 const id = nanoid();
                 const verb = "mention";
                 const message = "menyebut anda dalam postingan";
-                socket.emit("notifications", ({ id, receiver_id: user.user_id, actor_id: mention.id, object_id: posting.posting_id, data: state, verb, message, user }));
+                socket.emit("notifications", ({ id, receiver_id: user.user_id, actor_id: mention.id, object_id: comments[findIndex].posting_id, data: state, verb, message, user }));
             })
         } catch (err) {
             console.error(err);
         }
     }
-    async getComments(limit, page, posting_id, hasMore, comments) {
+    async getComments(limit, page, posting_id, hasMore, comments, target) {
         if (!hasMore) return;
         try {
             const offset = (page - 1) * limit;
-            const res = await this.#model.getComments(posting_id, offset, limit);
+            const res = await this.#model.getComments(posting_id, offset, limit, target);
             if (res.data.length < limit) {
                 this.#view.hasMore.value = false;
             }
@@ -135,19 +139,32 @@ export default class CommentsDashboardPresenter {
             console.error(err);
         }
     }
-    async getMentions(id, limit, page, comments) {
+    async getMentions(id, limit, comments, mention_id) {
         this.#view.loadingMentions.value = true;
         try {
-            const offset = (page - 1) * limit;
-            const res = await this.#model.getMentions(id, offset, limit);
             const findIndex = comments.findIndex(value => value.comment_id === id);
             if (!comments[findIndex].mentions) {
-                comments[findIndex].mentions = res.data;
-            } else {
-                comments[findIndex].mentions = [...comments[findIndex].mentions, ...res.data];
-            };
+                comments[findIndex].mentions = [];
+            }
+            const offset = mention_id ? comments[findIndex].mentions.length - 1 : comments[findIndex].mentions.length;
+            const res = await this.#model.getMentions(id, offset, limit);
+            console.log(res);
+            const mentions = res.data.filter(value => value.id !== comments[findIndex].mentions[0]?.id);
+            comments[findIndex].mentions = [...comments[findIndex].mentions, ...mentions];
             this.#view.comments.value = comments;
-            this.#view.pageMentions.value = page + 1;
+        } catch (err) {
+            console.error(err);
+        } finally {
+            this.#view.loadingMentions.value = false;
+        }
+    }
+    async getMention(comment_id, mention_id, comments) {
+        this.#view.loadingMentions.value = true;
+        try {
+            const findIndex = comments.findIndex(value => value.comment_id === comment_id);
+            const res = await this.#model.getMention(mention_id);
+            comments[findIndex].mentions = [res.data];
+            this.#view.comments.value = comments;
         } catch (err) {
             console.error(err);
         } finally {

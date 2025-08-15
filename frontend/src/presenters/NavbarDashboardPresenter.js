@@ -9,7 +9,6 @@ export default class NavbarDashboardPresenter {
     async getNotificationNotRead() {
         try {
             const res = await this.#model.geNotifNotRead();
-            console.log(res);
             this.#view.NotificationsNotRead.value = res.data;
         } catch (err) {
             console.error(err);
@@ -19,7 +18,6 @@ export default class NavbarDashboardPresenter {
         this.#view.loading.value = true;
         try {
             const res = await this.#model.getNotifications();
-            console.log(res);
             this.#view.notifications.value = res.data;
         } catch (err) {
             console.error(err);
@@ -34,6 +32,16 @@ export default class NavbarDashboardPresenter {
             const res = await this.#model.logout();
             console.log(res);
             this.#view.router.push("/login");
+        } catch (err) {
+            console.error(err);
+        }
+    }
+    async updateNotif(id, notifications, NotificationsNotRead) {
+        try {
+            const findIndex = notifications.findIndex(notif => notif.id === id);
+            notifications[findIndex].is_read = "true";
+            this.#view.NotificationsNotRead.value = NotificationsNotRead.filter(notif => notif.id !== id);
+            await this.#model.updateNotif(id, notifications[findIndex].is_read);
         } catch (err) {
             console.error(err);
         }
