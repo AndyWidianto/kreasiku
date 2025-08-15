@@ -1,4 +1,4 @@
-import { findMentions, insertMention } from "../services/mentionsService.js";
+import { findMention, findMentions, insertMention } from "../services/mentionsService.js";
 
 export const createMention = async (req, res) => {
     const { id, comment_id, content } = req.body;
@@ -27,6 +27,19 @@ export const getMentions = async (req, res) => {
         res.json({
             data: mentions
         });
+    } catch (err) {
+        console.error(err);
+        res.status(500);
+    }
+}
+
+export const getMention = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const mention = await findMention(id, req.protocol, req.get('host'));
+        res.json({
+            data: mention
+        })
     } catch (err) {
         console.error(err);
         res.status(500);

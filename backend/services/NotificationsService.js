@@ -19,7 +19,7 @@ export const updateNotif = async (is_read, id) => {
         is_read
     }, {
         where: {
-            notif_id: id
+            id
         }
     })
 }
@@ -33,10 +33,11 @@ export const findNotifs = async (protocol, host, id) => {
             as: "receiver",
             attributes: ["user_id", "username"],
             include: {
-                model: profiles
+                model: profiles,
+                as: "profile"
             }
         },
-        order: [['is_read', 'ASC']]
+        order: [['is_read', 'DESC']]
     });
     const notifs = results.map(result => {
         result.receiver.profile.dataValues.profile_url = `${protocol}://${host}/${result.receiver.profile.profile_picture}`;

@@ -44,6 +44,7 @@ const profiles = db.define('profiles', {
     timestamps: true
 });
 
-users.belongsTo(profiles, { foreignKey: "user_id" });
+users.hasOne(profiles, { foreignKey: "user_id", as: "profile" });
+profiles.belongsTo(users, { foreignKey: "user_id", as: "user" });
 
 export default profiles;

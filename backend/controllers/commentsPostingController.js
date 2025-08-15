@@ -16,9 +16,10 @@ export const createComment = async (req, res) => {
 }
 export const getComments = async (req, res) => {
     const { limit, offset } = req.query;
+    const targetId = req.query.target || null;
     const { id } = req.params;
     try {
-        const comments = await findComments(parseInt(limit), parseInt(offset), id, req.protocol, req.get('host'));
+        const comments = await findComments(parseInt(limit), parseInt(offset), id, req.protocol, req.get('host'), targetId);
         res.status(200).json({
             data: comments
         })

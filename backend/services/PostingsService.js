@@ -25,7 +25,8 @@ export const findPostings = async (protocol, host, limit, offset, user_id) => {
                 model: users,
                 attributes: ["user_id", "username"],
                 include: {
-                    model: profiles
+                    model: profiles,
+                    as: "profile"
                 }
             },
             { model: likesPosting },
@@ -49,6 +50,7 @@ export const findPostings = async (protocol, host, limit, offset, user_id) => {
     });
     const newData = results.map(posting => {
         const is_like = posting.likes.findIndex(like => like.user_id === user_id) > -1;
+        const mine = posting.user_id === user_id ? true : false;
         posting.dataValues.images = posting.dataValues.images.map(image => {
             image.image = `${protocol}://${host}/${image.image}`;
             return {
@@ -57,6 +59,7 @@ export const findPostings = async (protocol, host, limit, offset, user_id) => {
         });
         return {
             is_like,
+            mine,
             ...posting.dataValues
         }
     });
@@ -116,14 +119,16 @@ export const findPostingPrimary = async (protocol, host, id, user_id) => {
                 model: users,
                 attributes: ["user_id", "username"],
                 include: {
-                    model: profiles
+                    model: profiles,
+                    as: "profile"
                 }
             },
             {
                 model: likesPosting
             },
             {
-                model: images
+                model: images,
+                separate: true
             },
             {
                 model: comments,

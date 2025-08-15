@@ -12,7 +12,7 @@ export const insertMention = async (id, comment_id, user_id, content) => {
     });
     return result;
 }
-export const findMentions = async (id, limit, offset, protocol, host) => {
+export const findMentions = async (id, limit, offset, protocol, host, not_id) => {
     const results = await mention.findAll({
         where: {
             comment_id: id
@@ -22,7 +22,10 @@ export const findMentions = async (id, limit, offset, protocol, host) => {
                 model: users,
                 attributes: ["user_id", "username"],
                 as: "user",
-                include: { model: profiles }
+                include: {
+                    model: profiles,
+                    as: "profile"
+                }
             }
         ],
         order: [['createdAt', 'ASC']],
@@ -38,3 +41,28 @@ export const findMentions = async (id, limit, offset, protocol, host) => {
     })
     return newResults;
 }
+
+export const findMention = async (id, protocol, host) => {
+    const result = await mention.findOne({
+        where: {
+            id: id
+        },
+        include: [
+            {
+                model: users,
+                attributes: ["user_id", "username"],
+                as: "user",
+                include: {
+                    model: profiles,
+                    as: "profile"
+                }
+            }
+        ],
+        order: [['createdAt', 'ASC']],
+    });
+    const resultJson = result.toJSON();
+    const profile = resultJson.user.profile.profile_picture;
+    resultJson.user.profile.profile_picture = profile ? `${protocol}://${host}/${profile}` : null;
+    return resultJson;
+}
+

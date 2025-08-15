@@ -8,10 +8,11 @@ import { createComment, getComment, getComments } from '../controllers/commentsP
 import { createLikesComment } from '../controllers/LikesCommentController.js';
 import { createImagesPosting } from '../controllers/ImagesPostingController.js';
 import { createNotif, getNotifNotRead, getNotifs, updateNotifId } from '../controllers/NotificationsController.js';
-import { CreateProfile, updateImageCover } from '../controllers/ProfileController.js';
+import { CreateProfile, updateImageCover, updateProfile } from '../controllers/ProfileController.js';
 import { createMessage, deleteMessage, getMessages } from '../controllers/MessagesController.js';
 import { createConverstation, getConverstations } from '../controllers/ConverstationController.js';
-import { createMention, getMentions } from '../controllers/mentionsController.js';
+import { createMention, getMention, getMentions } from '../controllers/mentionsController.js';
+import { createFollow, getFollowers, getFollowings, getNotFollowings, unFollow } from '../controllers/followsController.js';
 
 const storage = multer.diskStorage({
     destination: "public/images/",
@@ -44,6 +45,7 @@ routes.get('/refreshToken', updateAccessToken);
 
 routes.post('/profile', verifyToken, upload.single("profile"), CreateProfile);
 routes.post('/update/cover/:id', verifyToken, upload.single("cover"), updateImageCover);
+routes.put('/profile', verifyToken, upload.single("profile_picture"), updateProfile);
 
 routes.get('/postings', verifyTokenIfAny, getPostings);
 routes.get('/posting/:id', verifyTokenIfAny, getPosting);
@@ -75,5 +77,12 @@ routes.get('/converstations', verifyToken, getConverstations);
 
 routes.post('/mention', verifyToken, createMention);
 routes.get('/mentions/:id', getMentions);
+routes.get('/mention/:id', getMention);
+
+routes.post('/follow', verifyToken, createFollow);
+routes.get('/:username/followers', verifyToken, getFollowers);
+routes.get('/:username/followings', verifyToken, getFollowings);
+routes.get('/not/followings', verifyToken, getNotFollowings);
+routes.delete('/follow/:id', verifyToken, unFollow);
 
 export default routes;

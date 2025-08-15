@@ -27,12 +27,18 @@ export const findLastMessages = async (user_id) => {
                 model: users,
                 as: "user1",
                 attributes: ["user_id", "username"],
-                include: { model: profiles }
+                include: { 
+                    model: profiles,
+                    as: "profile"
+                }
             },{
                 model: users,
                 as: "user2",
                 attributes: ["user_id", "username"],
-                include: { model: profiles }
+                include: { 
+                    model: profiles,
+                    as: "profile"
+                }
             }
         ],
         order: [["createdAt","ASC"]]

@@ -22,12 +22,18 @@ export const findConverstations = async (id) => {
                 model: users,
                 attributes: ["user_id", "username"],
                 as: "user1",
-                include: { model: profiles }
+                include: { 
+                    model: profiles,
+                    as: "profile"
+                 }
             },{
                 model: users,
                 attributes: ["user_id", "username"],
                 as: "user2",
-                include: { model: profiles }
+                include: { 
+                    model: profiles,
+                    as: "profile"
+                 }
             },
             {
                 model: messages,

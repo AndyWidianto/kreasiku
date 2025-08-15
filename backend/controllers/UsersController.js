@@ -2,7 +2,6 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { findUser, findUserForLogin, findUserPk, findUsers, insertUser, updateRefreshToken, findUserToToken, searchUsersFromUsername, findUserFromUsername } from "../services/UsersService.js";
 import { createAccessToken, createRefreshToken } from "../middleware/middleware.js";
-import { insertProfile } from "../services/ProfilesService.js";
 
 const secret = process.env.SECRET_JWT;
 const cache = new Map();
@@ -102,7 +101,7 @@ export const getUsers = async (req, res) => {
         })
     } catch (err) {
         console.error(err);
-        req.status(500);
+        res.status(500);
     }
 }
 export const getUser = async (req, res) => {
