@@ -39,6 +39,9 @@ export const verifyToken = (req, res, next) => {
 
 export const verifyTokenIfAny = async (req, res, next) => {
     const { authorization } = req.headers;
+    if (!authorization) {
+        return next();
+    }
     try {
         const parseAuth = authorization.split(" ")[1];
         const verifyToken = jwt.verify(parseAuth, secret);

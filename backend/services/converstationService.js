@@ -1,4 +1,4 @@
-import { Op } from "sequelize";
+import { Op, Sequelize } from "sequelize";
 import converstation from "../models/converstations.js"
 import users from "../models/users.js";
 import profiles from "../models/profile.js";
@@ -17,6 +17,13 @@ export const findConverstations = async (id) => {
         where: {
             [Op.or]: [{ user_id1: id }, { user_id2: id } ]
         },
+        attributes: [
+            "id",
+            "user_id1",
+            "user_id2",
+            "createdAt",
+            [Sequelize.fn("COUNT", Sequelize.fn("DISTINCT", Sequelize.col("all_messages.message_id"))), "unread_count"],
+        ],
         include: [
             {
                 model: users,
@@ -37,9 +44,21 @@ export const findConverstations = async (id) => {
             },
             {
                 model: messages,
-                order: [['createdAt', 'ASC']]
+                as: "all_messages",
+                attributes: [],
+                where: {
+                    is_read: "false",
+                    [Op.not]: { sender_id: id }
+                },
+                required: false
+            },
+            {
+                model: messages,
+                as: "last_message"
             }
-        ]
+        ],
+        group: ["converstation.id"],
+        order: [['createdAt', 'ASC']]
     });
     return results;
 }

@@ -32,13 +32,18 @@ const messages = db.define('messages', {
     content: {
         type: DataTypes.TEXT,
         allowNull: false
+    },
+    is_read: {
+        type: DataTypes.ENUM("false", "true"),
+        allowNull: true
     }
 }, {
     tableName: "messages",
     timestamps: true
 });
 
-converstation.hasMany(messages, { foreignKey: "converstation_id" });
+converstation.hasMany(messages, { foreignKey: "converstation_id", as: "all_messages" });
+converstation.hasOne(messages, { foreignKey: "converstation_id", as: "last_message" });
 
 users.hasMany(messages, { foreignKey: "receiver_id", as: "receiver" });
 users.hasMany(messages, { foreignKey: "sender_id", as: "sender" });

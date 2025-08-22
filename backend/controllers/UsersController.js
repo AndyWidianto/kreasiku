@@ -16,7 +16,7 @@ export const Login = async (req, res) => {
                 message: "Username salah!"
             })
         }
-        const checkPassword = await bcrypt.compare(password, user.dataValues.password);
+        const checkPassword = await bcrypt.compare(password, user.password);
         if (!checkPassword) {
             return res.status(403).json({
                 success: "fail",
@@ -33,7 +33,8 @@ export const Login = async (req, res) => {
         });
         res.status(200).json({
             message: "Login Berhasil",
-            token: token
+            token: token,
+            secret: process.env.CRYPTO_SECRET
         });
     } catch (err) {
         console.error(err);
@@ -44,19 +45,25 @@ export const Register = async (req, res) => {
     const { username, email, password } = req.body;
 
     if (!(username)) {
-        return res.status(403).json({
+        return res.status(404).json({
             message: "username not found"
+        });
+    };
+
+    if (!(password)) {
+        return res.status(404).json({
+            message: "password not found"
         });
     };
 
     try {
         if (await findUser(username)) {
-            return res.status(403).json({
+            return res.status(405).json({
                 message: "Username telah tersedia"
             })
         }
         const passwordHash = await bcrypt.hash(password, 10);
-        const user = await insertUser(username, email, passwordHash);
+        const user = await insertUser({ username, email, password: passwordHash });
         const token = createAccessToken(user);
         const refreshToken = createRefreshToken(user);
         await updateRefreshToken(user.user_id, refreshToken);
@@ -81,10 +88,11 @@ export const Logout = async (req, res) => {
     });
 }
 export const getUsers = async (req, res) => {
-    const { username } = req.query;
+    const { username, limit, offset } = req.query;
+    const userData = req.user || null;
     try {
         if (username) {
-            const user = await searchUsersFromUsername(username);
+            const user = await searchUsersFromUsername({ user_id: userData?.user_id, user: username, protocol: req.protocol, host: req.get('host'), limit: parseInt(limit), offset: parseInt(offset) });
             return res.status(200).json({
                 data: user
             })
@@ -109,8 +117,10 @@ export const getUser = async (req, res) => {
     try {
         const user = await findUserPk(user_id);
         const userData = user.toJSON();
-        userData.profile.cover_picture = userData.profile.cover_picture ? `${req.protocol}://${req.get('host')}/${userData.profile.cover_picture}` : null;
-        userData.profile.profile_picture = user.profile.profile_picture ? `${req.protocol}://${req.get('host')}/${user.profile.profile_picture}` : null;
+        if (userData.profile) {
+            userData.profile.cover_picture = userData.profile.cover_picture ? `${req.protocol}://${req.get('host')}/${userData.profile.cover_picture}` : null;
+            userData.profile.profile_picture = user.profile.profile_picture ? `${req.protocol}://${req.get('host')}/${user.profile.profile_picture}` : null;
+        }
         res.status(200).json({
             data: userData
         });
@@ -146,27 +156,12 @@ export const updateAccessToken = async (req, res) => {
 
 export const getUserFromUsername = async (req, res) => {
     const { username } = req.params;
-    const { authorization } = req.headers;
+    const user = req.user || null;
     try {
-        const user = await findUserFromUsername(username);
-        const userData = user.toJSON();
-        userData.profile.profile_picture = userData.profile.profile_picture ? `${req.protocol}://${req.get('host')}/${userData.profile.profile_picture}` : null;
-        userData.profile.cover_picture = userData.profile.cover_picture ? `${req.protocol}://${req.get('host')}/${userData.profile.cover_picture}` : null;
-        if (!user) {
-            return res.status(404).json({ message: "user not found" });
-        }
-        if (!authorization) {
-            userData.mine = false;
-            return res.json({
-                data: userData
-            })
-        }
-        const token = authorization.split(" ")[1];
-        const verifyToken = jwt.verify(token, process.env.SECRET_JWT);
-        userData.mine = verifyToken.user_id === userData.user_id;
+        const findUser = await findUserFromUsername({ username, user_id: user?.user_id, protocol: req.protocol, host: req.get('host') });
         return res.json({
-            data: userData
-        })
+            data: findUser
+        });
     } catch (err) {
         console.error(err);
         return res.status(500);

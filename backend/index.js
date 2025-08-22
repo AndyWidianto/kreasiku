@@ -6,7 +6,8 @@ import cookieParser from 'cookie-parser';
 import { Server } from 'socket.io';
 import { createServer } from 'http';
 import { defineSocket } from './socket.js';
-
+import messages from './models/Messages.js';
+messages.sync({ force: true });
 
 
 const app = express();

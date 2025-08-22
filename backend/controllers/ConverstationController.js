@@ -16,24 +16,22 @@ export const getConverstations = async (req, res) => {
     const { user_id } = req.user;
     try {
         const results = await findConverstations(user_id);
-        const newResults = results.map(value => {
-            const my_id = value.user_id1 === user_id ? value.user_id1 : value.user_id2;
-            const user = my_id !== value.user1.user_id ? value.user1 : value.user2;
+        const newResults = results.map(result => {
+            const resultJson = result.toJSON();
+            const my_id = resultJson.user_id1 === user_id ? resultJson.user_id1 : resultJson.user_id2;
+            const user = my_id !== resultJson.user1.user_id ? resultJson.user1 : resultJson.user2;
+            const me =  my_id === resultJson.user1.user_id ? resultJson.user1 : resultJson.user2;
             user.profile.profile_picture = req.protocol + '://' + req.get('host') + '/' + user.profile.profile_picture;
-            value.messages = value.messages.map(message => {
-                const sended = true;
-                return {
-                    sended,
-                    ...message.dataValues
-                }
-            });
             return {
-                id: value.id,
-                user_id1: value.user_id1,
-                user_id2: value.user_id2,
-                messages: value.messages,
+                id: resultJson.id,
+                user_id1: resultJson.user_id1,
+                user_id2: resultJson.user_id2,
+                createdAt: resultJson.createdAt,
+                unread_count: resultJson.unread_count,
+                last_message: resultJson.last_message,
                 my_id,
                 user,
+                me,
             }
         })
         return res.json({

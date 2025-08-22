@@ -29,6 +29,8 @@ const likesPosting = db.define("likes", {
 likesPosting.belongsTo(users, { foreignKey: "user_id" });
 likesPosting.belongsTo(postings, { foreignKey: "posting_id" });
 users.hasMany(likesPosting, { foreignKey: "user_id" });
-postings.hasMany(likesPosting, { foreignKey: "posting_id" });
+
+postings.hasMany(likesPosting, { foreignKey: "posting_id", as: "all_likes" });
+postings.hasOne(likesPosting, { foreignKey: "posting_id", as: "like" });
 
 export default likesPosting;

@@ -5,15 +5,17 @@ import notifications from "../models/notification.js";
 import follows from "../models/follows.js";
 import postings from "../models/posting.js";
 
-export const insertUser = async (username, email, password) => {
-    return await users.create({
-        username: username,
-        email: email,
-        password: password
+export const insertUser = async ({ username, email, password, refreshToken }) => {
+    const result = await users.create({
+        username,
+        email,
+        password,
+        refreshToken
     });
+    return result.toJSON();
 }
 export const findUserForLogin = async (user) => {
-    return await users.findOne({
+    const result = await users.findOne({
         where: {
             [Op.or]: [
                 {
@@ -25,6 +27,8 @@ export const findUserForLogin = async (user) => {
             ]
         }
     });
+    if (!result) return null;
+    return result.toJSON();
 }
 export const findUser = async (user) => {
     return await users.findOne({
@@ -44,22 +48,47 @@ export const findUser = async (user) => {
         }
     })
 }
-export const searchUsersFromUsername = async (user) => {
-    return await users.findAll({
+export const searchUsersFromUsername = async ({ user_id, user, protocol, host, limit, offset }) => {
+    const results = await users.findAll({
         attributes: ["user_id", "username"],
         where: {
             username: {
                 [Op.like]: `%${user}%`
             }
         },
-        include: {
-            model: profiles,
-            as: "profile"
-        },
-        limit: 10
-    })
+        include: [
+            {
+                model: profiles,
+                as: "profile"
+            },
+            {
+                model: follows,
+                as: "follower",
+                where: {
+                    follower_id: user_id || null
+                },
+                required: false
+            }
+        ],
+        limit,
+        offset
+    });
+    if (results.length <= 0) {
+        return results;
+    }
+    const newResults = results.map(result => {
+        const resultJson = result.toJSON();
+        const my_following = resultJson.follower ? true : false;
+        const profile_picture = resultJson.profile.profile_picture;
+        resultJson.profile.profile_picture = profile_picture ? `${protocol}://${host}/${profile_picture}` : null;
+        return { 
+            my_following,
+            ...resultJson
+         };
+    });
+    return newResults;
 }
-export const findUserFromUsername = async (username) => {
+export const findUserFromUsername = async ({ username, user_id, protocol, host }) => {
     const user = await users.findOne({
         where: { username },
         attributes: [
@@ -75,7 +104,7 @@ export const findUserFromUsername = async (username) => {
                 as: "postings",
                 attributes: [],
             },
-            { 
+            {
                 model: profiles,
                 as: "profile"
             },
@@ -92,7 +121,18 @@ export const findUserFromUsername = async (username) => {
         ],
         group: ["users.user_id"]
     })
-    return user;
+
+    if (!user) {
+        throw new Error("User tidak ada");
+    }
+    const userData = user.toJSON();
+    userData.profile.profile_picture = userData.profile.profile_picture ? `${protocol}://${host}/${userData.profile.profile_picture}` : null;
+    userData.profile.cover_picture = userData.profile.cover_picture ? `${protocol}://${host}/${userData.profile.cover_picture}` : null;
+    const mine = user_id === userData.user_id;
+    userData.mine = mine;
+    const myFollow = await follows.findOne({ where: { follower_id: user_id, following_id: userData.user_id } });
+    userData.my_following = myFollow ? true : false;
+    return userData;
 }
 export const findUsers = async () => {
     return await users.findAll({

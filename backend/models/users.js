@@ -18,7 +18,7 @@ const users = db.define('users', {
     },
     password: {
         type: DataTypes.STRING,
-        allowNull: false
+        allowNull: true
     }, 
     refreshToken: {
         type: DataTypes.STRING,

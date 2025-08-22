@@ -1,38 +1,11 @@
-import { destroyMessage, findLastMessages, findMessages, insertMessage } from "../services/Messagesservice.js";
+import { destroyMessage, findMessages, insertMessage, updateMessageUnreadService } from "../services/Messagesservice.js";
 
-export const getMessages = async (req, res) => {
-    const { id } = req.params;
-    try {
-        const messages = await findMessages(id);
-        res.status(200).json({
-            data: messages
-        });
-    } catch (err) {
-        console.error(err);
-        return res.status(500);
-    }
-}
-
-export const getLastMessages = async (req, res) => {
-    const { user_id } = req.user;
-    try {
-        const messages = await findLastMessages(user_id);
-        return res.json({
-            data: messages
-        })
-    } catch (err) {
-        console.error(err);
-        res.status(404).json({
-            Error: err
-        });
-    }
-}
 
 export const createMessage = async (req, res) => {
-    const { coverstation_id, message_id, sender_id, receiver_id, content } = req.body;
+    const { coverstation_id, message_id, sender_id, receiver_id, content, is_read } = req.body;
 
     try {
-        const messages = await insertMessage(coverstation_id, message_id, sender_id, receiver_id, content);
+        const messages = await insertMessage({ coverstation_id, message_id, sender_id, receiver_id, content, is_read });
         return res.json({
             data: messages
         })
@@ -51,4 +24,38 @@ export const deleteMessage = async (req, res) => {
         console.error(err);
         res.status(500);
     }
+}
+export const getMessages = async (req, res) => {
+    const { id } = req.params;
+    const { user_id } = req.user;
+    try {
+        const message = await findMessages(id, user_id);
+        return res.json({
+            data: message
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500);
+    }
+}
+
+export const updateMessageUnread = async (req, res) => {
+    const { sender_id } = req.body;
+    const { user_id } = req.user;
+    try {
+        const messages = await updateMessageUnreadService(sender_id, user_id);
+        res.json({
+            message: "Berhasil update messages",
+            data: messages
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500);
+    }
+}
+
+export const getSecret = (req, res) => {
+    res.json({
+        secret: process.env.CRYPTO_SECRET
+    });
 }

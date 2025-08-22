@@ -28,6 +28,7 @@ const follows = db.define("follows", {
 
 users.hasMany(follows, { foreignKey: "follower_id", as: "followings" });
 users.hasMany(follows, { foreignKey: "following_id", as: "followers" });
+users.hasOne(follows, { foreignKey: "following_id", as: "follower" });
 
 follows.belongsTo(users, { foreignKey: "follower_id", as: "follower" });
 follows.belongsTo(users, { foreignKey: "following_id", as: "following" });
