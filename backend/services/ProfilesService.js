@@ -10,7 +10,7 @@ const __dirname = dirname(filename);
 
 
 export const insertProfile = async ({ user_id, name, description, gender, date_of_birth, address }) => {
-    const user = await users.findByPk(user_id, { include: { model: profiles }});
+    const user = await users.findByPk(user_id, { include: { model: profiles, as: "profile" }});
     const userJson = user.toJSON();
     if (userJson.profile) {
         return userJson;
@@ -21,7 +21,15 @@ export const insertProfile = async ({ user_id, name, description, gender, date_o
 
 export const updateCover = async (id, image) => {
     const findProfile = await profiles.findByPk(id);
-    if (findProfile) {
+    if (!findProfile) {
+        const filePath = path.join(__dirname, '../public/images', image);
+        fs.unlink(filePath, (err) => {
+            if (err) {
+                console.log("Terjadi kesalahan", err);
+                return;
+            }
+            console.log("Berhasil menghapus cover picture");
+        });
         throw new Error("Profile tidak tersedia");
     }
     if (findProfile.cover_picture) {

@@ -4,8 +4,7 @@ import users from "./users.js";
 
 const converstation = db.define("converstation", {
     id: {
-        type: DataTypes.INTEGER,
-        autoIncrement: true,
+        type: DataTypes.STRING,
         primaryKey: true,
     },
     user_id1: {
@@ -28,9 +27,9 @@ const converstation = db.define("converstation", {
 });
 
 
-users.hasMany(converstation, { foreignKey: "user_id1", as: "user1" });
-users.hasMany(converstation, { foreignKey: "user_id2", as: "user2" });
-converstation.belongsTo(users, { foreignKey: "user_id1", as: "user1" });
-converstation.belongsTo(users, { foreignKey: "user_id2", as: "user2" });
+users.hasMany(converstation, { foreignKey: "user_id1", onDelete: "CASCADE", as: "user1" });
+users.hasMany(converstation, { foreignKey: "user_id2", onDelete: "CASCADE", as: "user2" });
+converstation.belongsTo(users, { foreignKey: "user_id1", onDelete: "CASCADE", as: "user1" });
+converstation.belongsTo(users, { foreignKey: "user_id2", onDelete: "CASCADE", as: "user2" });
 
 export default converstation;

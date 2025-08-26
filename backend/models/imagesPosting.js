@@ -23,6 +23,6 @@ const images = db.define("images", {
     timestamps: true
 });
 
-postings.hasMany(images, { foreignKey: "posting_id" });
+postings.hasMany(images, { foreignKey: "posting_id", onDelete: "CASCADE" });
 
 export default images;

@@ -1,11 +1,18 @@
-import { findConverstations, insertConverstation } from "../services/converstationService.js";
+import { findConverstation, findConverstations, insertConverstation } from "../services/converstationService.js";
 
 export const createConverstation = async (req, res) => {
-    const { user_id1, user_id2 } = req.body;
-
+    const { id, user_id2 } = req.body;
+    const { user_id } = req.user;
     try {
-        const result = await insertConverstation(user_id1, user_id2);
-        res.json(result);
+        if (user_id === user_id2) { 
+            return res.status(400).json({
+                message: "anda tidak dikenakan untuk membuat percakapan dengan diri sendiri"
+            })
+        }
+        const result = await insertConverstation({ id, user_id1: user_id, user_id2 });
+        res.json({
+            data: result
+        });
     } catch (err) {
         console.error(err);
         return res.status(500);
@@ -15,28 +22,24 @@ export const createConverstation = async (req, res) => {
 export const getConverstations = async (req, res) => {
     const { user_id } = req.user;
     try {
-        const results = await findConverstations(user_id);
-        const newResults = results.map(result => {
-            const resultJson = result.toJSON();
-            const my_id = resultJson.user_id1 === user_id ? resultJson.user_id1 : resultJson.user_id2;
-            const user = my_id !== resultJson.user1.user_id ? resultJson.user1 : resultJson.user2;
-            const me =  my_id === resultJson.user1.user_id ? resultJson.user1 : resultJson.user2;
-            user.profile.profile_picture = req.protocol + '://' + req.get('host') + '/' + user.profile.profile_picture;
-            return {
-                id: resultJson.id,
-                user_id1: resultJson.user_id1,
-                user_id2: resultJson.user_id2,
-                createdAt: resultJson.createdAt,
-                unread_count: resultJson.unread_count,
-                last_message: resultJson.last_message,
-                my_id,
-                user,
-                me,
-            }
-        })
+        const results = await findConverstations({ id: user_id, protocol: req.protocol, host: req.get('host') });
         return res.json({
-            data: newResults
+            data: results
         });
+    } catch (err) {
+        console.error(err);
+        res.status(500);
+    }
+}
+
+export const getConverstation = async (req, res) => {
+    const { id } = req.params;
+    const { user_id } = req.user;
+    try {
+        const result = await findConverstation({ id, user_id, protocol: req.protocol, host: req.get('host') });
+        res.json({
+            data: result
+        })
     } catch (err) {
         console.error(err);
         res.status(500);

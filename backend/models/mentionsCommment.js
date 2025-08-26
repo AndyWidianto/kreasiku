@@ -31,10 +31,10 @@ const mention = db.define('mentions', {
     timestamps: true
 });
 
-comments.hasMany(mention, { foreignKey: "comment_id" });
-mention.belongsTo(comments, { foreignKey: "comment_id" });
+comments.hasMany(mention, { foreignKey: "comment_id", onDelete: "CASCADE" });
+mention.belongsTo(comments, { foreignKey: "comment_id", onDelete: "CASCADE" });
 
-users.hasMany(mention, { foreignKey: "user_id", as: "users" });
-mention.belongsTo(users, { foreignKey: "user_id", as: "user"});
+users.hasMany(mention, { foreignKey: "user_id", onDelete: "CASCADE", as: "users" });
+mention.belongsTo(users, { foreignKey: "user_id", onDelete: "CASCADE", as: "user"});
 
 export default mention;

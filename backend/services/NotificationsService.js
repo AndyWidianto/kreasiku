@@ -23,7 +23,7 @@ export const updateNotif = async (is_read, id) => {
         }
     })
 }
-export const findNotifs = async (protocol, host, id) => {
+export const findNotifs = async ({ protocol, host, id, limit, offset }) => {
     const results =  await notifications.findAll({
         where: {
             actor_id: id
@@ -37,7 +37,9 @@ export const findNotifs = async (protocol, host, id) => {
                 as: "profile"
             }
         },
-        order: [['is_read', 'DESC']]
+        order: [['is_read', 'DESC']],
+        limit,
+        offset
     });
     const notifs = results.map(result => {
         result.receiver.profile.dataValues.profile_url = `${protocol}://${host}/${result.receiver.profile.profile_picture}`;

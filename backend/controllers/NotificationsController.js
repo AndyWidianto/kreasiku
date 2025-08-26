@@ -21,8 +21,9 @@ export const createNotif = async (req, res) => {
 }
 export const getNotifs = async (req, res) => {
     const { user_id } = req.user;
+    const { limit, offset } = req.query;
     try {
-        const notifs = await findNotifs(req.protocol, req.get('host'), user_id);
+        const notifs = await findNotifs({ protocol: req.protocol, host: req.get('host'), id: user_id, limit: parseInt(limit), offset: parseInt(offset) });
         res.status(200).json({
             data: notifs
         })

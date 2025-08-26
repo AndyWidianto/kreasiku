@@ -24,7 +24,7 @@ const postings = db.define("postings", {
     timestamps: true
 });
 
-users.hasMany(postings, { foreignKey: "user_id" });
-postings.belongsTo(users, { foreignKey: "user_id" });
+users.hasMany(postings, { foreignKey: "user_id", onDelete: "CASCADE" });
+postings.belongsTo(users, { foreignKey: "user_id", onDelete: "CASCADE" });
 
 export default postings;

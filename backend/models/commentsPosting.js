@@ -31,9 +31,9 @@ const comments = db.define("comments", {
     timestamps: true
 });
 
-users.hasMany(comments, { foreignKey: "user_id" });
-postings.hasMany(comments, { foreignKey: "posting_id" });
+users.hasMany(comments, { foreignKey: "user_id", onDelete: "CASCADE"  });
+postings.hasMany(comments, { foreignKey: "posting_id", onDelete: "CASCADE" });
 
-comments.belongsTo(users, { foreignKey: "user_id" });
+comments.belongsTo(users, { foreignKey: "user_id", onDelete: "CASCADE" });
 
 export default comments;

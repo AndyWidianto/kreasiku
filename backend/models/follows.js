@@ -26,11 +26,12 @@ const follows = db.define("follows", {
     timestamps: true
 });
 
-users.hasMany(follows, { foreignKey: "follower_id", as: "followings" });
-users.hasMany(follows, { foreignKey: "following_id", as: "followers" });
-users.hasOne(follows, { foreignKey: "following_id", as: "follower" });
+users.hasMany(follows, { foreignKey: "follower_id", onDelete: "CASCADE", as: "followings" });
+users.hasMany(follows, { foreignKey: "following_id", onDelete: "CASCADE", as: "followers" });
+users.hasOne(follows, { foreignKey: "following_id", onDelete: "CASCADE", as: "follower" });
+users.hasOne(follows, { foreignKey: "follower_id", onDelete: "CASCADE", as: "following" });
 
-follows.belongsTo(users, { foreignKey: "follower_id", as: "follower" });
-follows.belongsTo(users, { foreignKey: "following_id", as: "following" });
+follows.belongsTo(users, { foreignKey: "follower_id", onDelete: "CASCADE", as: "follower" });
+follows.belongsTo(users, { foreignKey: "following_id", onDelete: "CASCADE", as: "following" });
 
 export default follows;

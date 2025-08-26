@@ -28,7 +28,7 @@ const likesComment = db.define("likes", {
     timestamps: true
 });
 
-users.hasMany(likesComment, { foreignKey: "user_id" });
-comments.hasMany(likesComment, { foreignKey: "posting_id" });
+users.hasMany(likesComment, { foreignKey: "user_id", onDelete: "CASCADE" });
+comments.hasMany(likesComment, { foreignKey: "posting_id", onDelete: "CASCADE" });
 
 export default likesComment;

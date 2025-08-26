@@ -44,10 +44,10 @@ const notifications = db.define("notifications", {
     timestamps: true
 });
 
-users.hasMany(notifications, { foreignKey: "receiver_id" });
-users.hasMany(notifications, { foreignKey: "actor_id" });
+users.hasMany(notifications, { foreignKey: "receiver_id", onDelete: "CASCADE" });
+users.hasMany(notifications, { foreignKey: "actor_id", onDelete: "CASCADE" });
 
-notifications.belongsTo(users, { as: "receiver", foreignKey: "receiver_id" });
-notifications.belongsTo(users, { as: "actor", foreignKey: "actor_id" });
+notifications.belongsTo(users, { as: "receiver", onDelete: "CASCADE", foreignKey: "receiver_id" });
+notifications.belongsTo(users, { as: "actor", onDelete: "CASCADE", foreignKey: "actor_id" });
 
 export default notifications;

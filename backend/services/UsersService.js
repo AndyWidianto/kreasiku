@@ -44,7 +44,8 @@ export const findUser = async (user) => {
             ]
         },
         include: {
-            model: profiles
+            model: profiles,
+            as: "profile"
         }
     })
 }
@@ -54,6 +55,9 @@ export const searchUsersFromUsername = async ({ user_id, user, protocol, host, l
         where: {
             username: {
                 [Op.like]: `%${user}%`
+            },
+            user_id: {
+                [Op.not]: user_id || null
             }
         },
         include: [
@@ -73,8 +77,15 @@ export const searchUsersFromUsername = async ({ user_id, user, protocol, host, l
         limit,
         offset
     });
+    const countUsers = await users.count({
+        where: {
+            username: {
+                [Op.like]: `%${user}%`
+            }
+        }
+    });
     if (results.length <= 0) {
-        return results;
+        return { results , count: countUsers };
     }
     const newResults = results.map(result => {
         const resultJson = result.toJSON();
@@ -86,7 +97,7 @@ export const searchUsersFromUsername = async ({ user_id, user, protocol, host, l
             ...resultJson
          };
     });
-    return newResults;
+    return { results: newResults, count: countUsers };
 }
 export const findUserFromUsername = async ({ username, user_id, protocol, host }) => {
     const user = await users.findOne({
@@ -118,6 +129,22 @@ export const findUserFromUsername = async ({ username, user_id, protocol, host }
                 as: "followings",
                 attributes: []
             },
+            {
+                model: follows,
+                as: "follower",
+                required: false,
+                where: {
+                    follower_id: user_id || null
+                }
+            },
+            {
+                model: follows,
+                as: "following",
+                required: false,
+                where: {
+                    following_id: user_id || null
+                }
+            },
         ],
         group: ["users.user_id"]
     })
@@ -130,14 +157,20 @@ export const findUserFromUsername = async ({ username, user_id, protocol, host }
     userData.profile.cover_picture = userData.profile.cover_picture ? `${protocol}://${host}/${userData.profile.cover_picture}` : null;
     const mine = user_id === userData.user_id;
     userData.mine = mine;
-    const myFollow = await follows.findOne({ where: { follower_id: user_id, following_id: userData.user_id } });
-    userData.my_following = myFollow ? true : false;
+    userData.my_following = userData.follower ? true : false;
+    userData.user_follow_me = userData.following ? true : false;
     return userData;
 }
-export const findUsers = async () => {
+export const findUsers = async (user_id) => {
     return await users.findAll({
+        where: {
+            user_id: {
+                [Op.not]: user_id
+            }
+        },
         include: {
-            model: profiles
+            model: profiles,
+            as: "profile"
         }
     });
 }

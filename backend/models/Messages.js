@@ -9,7 +9,7 @@ const messages = db.define('messages', {
         primaryKey: true
     },
     converstation_id: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.STRING,
         references: {
             model: converstation,
             key: "id"
@@ -42,13 +42,13 @@ const messages = db.define('messages', {
     timestamps: true
 });
 
-converstation.hasMany(messages, { foreignKey: "converstation_id", as: "all_messages" });
-converstation.hasOne(messages, { foreignKey: "converstation_id", as: "last_message" });
+converstation.hasMany(messages, { foreignKey: "converstation_id", onDelete: "CASCADE", as: "all_messages" });
+converstation.hasOne(messages, { foreignKey: "converstation_id", onDelete: "CASCADE", as: "last_message" });
 
-users.hasMany(messages, { foreignKey: "receiver_id", as: "receiver" });
-users.hasMany(messages, { foreignKey: "sender_id", as: "sender" });
+users.hasMany(messages, { foreignKey: "receiver_id", onDelete: "CASCADE", as: "receiver" });
+users.hasMany(messages, { foreignKey: "sender_id", onDelete: "CASCADE", as: "sender" });
 
-messages.belongsTo(users, { foreignKey: "receiver_id", as: "receiver" });
-messages.belongsTo(users, { foreignKey: "sender_id", as: "sender" });
+messages.belongsTo(users, { foreignKey: "receiver_id", onDelete: "CASCADE", as: "receiver" });
+messages.belongsTo(users, { foreignKey: "sender_id", onDelete: "CASCADE", as: "sender" });
 
 export default messages;

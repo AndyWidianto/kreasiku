@@ -44,7 +44,7 @@ const profiles = db.define('profiles', {
     timestamps: true
 });
 
-users.hasOne(profiles, { foreignKey: "user_id", as: "profile" });
-profiles.belongsTo(users, { foreignKey: "user_id", as: "user" });
+users.hasOne(profiles, { foreignKey: "user_id", onDelete: "CASCADE", as: "profile" });
+profiles.belongsTo(users, { foreignKey: "user_id", onDelete: "CASCADE", as: "user" });
 
 export default profiles;

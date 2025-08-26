@@ -84,14 +84,23 @@ export const findFollowers = async ({ username, protocol, host, user_id, search,
                     model: profiles,
                     as: "profile"
                 }
+            },
+            {
+                model: users,
+                as: "following",
+                attributes: ["user_id", "username"]
             }
         ],
         limit,
         offset
     });
+    console.log(user_id);
     const newResults = results.map(result => {
         const resultJson = result.toJSON();
-        const mine = resultJson.follower.follower_id === user_id;
+        const mine = resultJson.follower.user_id === user_id;
+        if (mine) {
+            resultJson.follow = true;
+        }
         const profile = resultJson.follower.profile.profile_picture;
         const cover = resultJson.follower.profile.cover_picture;
         resultJson.follower.profile.profile_picture = profile ? `${protocol}://${host}/${profile}` : null;
@@ -128,22 +137,27 @@ export const findFollowings = async ({ username, protocol, host, user_id, search
                     model: profiles,
                     as: "profile"
                 }
+            },
+            {
+                model: users,
+                as: "follower",
+                attributes: ["user_id", "username"],
             }
         ],
+        order: [["createdAt", "DESC"]],
         limit,
         offset
     });
     const newResults = results.map(result => {
         const resultJson = result.toJSON();
-        const folback = true;
-        const my_following = user.user_id === user_id;
+        const my_follower = resultJson.follower.user_id === user_id;
         const profile = resultJson.following.profile.profile_picture;
         const cover = resultJson.following.profile.cover_picture;
         resultJson.following.profile.profile_picture = profile ? `${protocol}://${host}/${profile}` : null;
         resultJson.following.profile.cover_picture = cover ? `${protocol}://${host}/${cover}` : null;
         return {
-            folback,
-            my_following,
+            my_id: user_id,
+            my_follower,
             ...resultJson
         }
     })

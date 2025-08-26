@@ -13,13 +13,14 @@ export const Login = async (req, res) => {
         const user = await findUserForLogin(username);
         if (!user) {
             return res.status(404).json({
+                error: "username",
                 message: "Username salah!"
             })
         }
         const checkPassword = await bcrypt.compare(password, user.password);
         if (!checkPassword) {
             return res.status(403).json({
-                success: "fail",
+                error: "password",
                 message: "Mohon masukan password dengan benar!"
             });
         }
@@ -92,12 +93,13 @@ export const getUsers = async (req, res) => {
     const userData = req.user || null;
     try {
         if (username) {
-            const user = await searchUsersFromUsername({ user_id: userData?.user_id, user: username, protocol: req.protocol, host: req.get('host'), limit: parseInt(limit), offset: parseInt(offset) });
+            const { results, count } = await searchUsersFromUsername({ user_id: userData?.user_id, user: username, protocol: req.protocol, host: req.get('host'), limit: parseInt(limit), offset: parseInt(offset) });
             return res.status(200).json({
-                data: user
-            })
+                data: results,
+                count: count
+            });
         }
-        const users = await findUsers();
+        const users = await findUsers(userData?.user_id);
         const NewUsers = users.map(user => {
             delete user.dataValues.password;
             return {
@@ -116,6 +118,9 @@ export const getUser = async (req, res) => {
     const { user_id } = req.user;
     try {
         const user = await findUserPk(user_id);
+        if (!user) {
+            return res.status(404).json({ message: "user not found"});
+        }
         const userData = user.toJSON();
         if (userData.profile) {
             userData.profile.cover_picture = userData.profile.cover_picture ? `${req.protocol}://${req.get('host')}/${userData.profile.cover_picture}` : null;

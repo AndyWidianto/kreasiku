@@ -6,6 +6,7 @@ import profiles from "../models/profile.js";
 import comments from "../models/commentsPosting.js";
 import { Op, Sequelize } from "sequelize";
 import mention from "../models/mentionsCommment.js";
+import shares from "../models/shares.js";
 
 
 export const findPostings = async ({ protocol, host, limit, offset, user_id }) => {
@@ -16,9 +17,11 @@ export const findPostings = async ({ protocol, host, limit, offset, user_id }) =
             "user_id",
             "content",
             "createdAt",
+            "updatedAt",
             [Sequelize.fn("COUNT", Sequelize.fn("DISTINCT", Sequelize.col("comments.comment_id"))), "total_comments"],
             [Sequelize.fn("COUNT", Sequelize.col("comments.mentions.id")), "total_mentions"],
-            [Sequelize.fn("COUNT", Sequelize.fn("DISTINCT", Sequelize.col("all_likes.id"))), "total_likes"]
+            [Sequelize.fn("COUNT", Sequelize.fn("DISTINCT", Sequelize.col("all_likes.id"))), "total_likes"],
+            [Sequelize.fn("COUNT", Sequelize.fn("DISTINCT", Sequelize.col("shares.id"))), "total_shares"],
         ],
         order: [['posting_id', 'DESC']],
         include: [
@@ -53,12 +56,20 @@ export const findPostings = async ({ protocol, host, limit, offset, user_id }) =
                     model: mention,
                     attributes: []
                 }
+            },
+            {
+                model: shares,
+                as: "shares",
+                attributes: [],
             }
         ],
         group: ["postings.posting_id"],
         limit: limit,
         offset: offset
     });
+    if (results.length < 1) {
+        return results;
+    }
     const newData = results.map(posting => {
         const is_like = posting.like ? true : false;
         const profile_picture = posting.user.profile.profile_picture;
@@ -95,7 +106,8 @@ export const searchPostings = async ({ protocol, host, limit, offset, search, us
             "createdAt",
             [Sequelize.fn("COUNT", Sequelize.fn("DISTINCT", Sequelize.col("comments.comment_id"))), "total_comments"],
             [Sequelize.fn("COUNT", Sequelize.col("comments.mentions.id")), "total_mentions"],
-            [Sequelize.fn("COUNT", Sequelize.fn("DISTINCT", Sequelize.col("all_likes.id"))), "total_likes"]
+            [Sequelize.fn("COUNT", Sequelize.fn("DISTINCT", Sequelize.col("all_likes.id"))), "total_likes"],
+            [Sequelize.fn("COUNT", Sequelize.fn("DISTINCT", Sequelize.col("shares.id"))), "total_shares"],
         ],
         order: [['posting_id', 'DESC']],
         include: [
@@ -130,6 +142,11 @@ export const searchPostings = async ({ protocol, host, limit, offset, search, us
                     model: mention,
                     attributes: []
                 }
+            },
+            {
+                model: shares,
+                as: "shares",
+                attributes: [],
             }
         ],
         group: ["postings.posting_id"],
@@ -141,6 +158,7 @@ export const searchPostings = async ({ protocol, host, limit, offset, search, us
     }
     const newResults =  results.map(posting => {
         const is_like = posting.like ? true : false;
+        const mine = posting.user.user_id === user_id;
         const profile_picture = posting.user.profile.profile_picture;
         posting.user.profile.profile_picture = profile_picture ? `${protocol}://${host}/${profile_picture}` : null;
         posting.dataValues.images = posting.dataValues.images.map(image => {
@@ -151,6 +169,7 @@ export const searchPostings = async ({ protocol, host, limit, offset, search, us
         });
         return {
             is_like,
+            mine,
             ...posting.dataValues
         }
     });
@@ -168,7 +187,8 @@ export const findPostingPrimary = async (protocol, host, id, user_id) => {
             "createdAt",
             [Sequelize.fn('COUNT', Sequelize.fn('DISTINCT', Sequelize.col("all_likes.id"))), 'total_likes'],
             [Sequelize.fn('COUNT', Sequelize.fn('DISTINCT', Sequelize.col('comments.comment_id'))), 'total_comments'],
-            [Sequelize.fn('COUNT', Sequelize.col('comments.mentions.id')), 'total_mentions']
+            [Sequelize.fn('COUNT', Sequelize.col('comments.mentions.id')), 'total_mentions'],
+            [Sequelize.fn("COUNT", Sequelize.fn("DISTINCT", Sequelize.col("shares.id"))), "total_shares"],
         ],
         include: [
             {
@@ -204,6 +224,11 @@ export const findPostingPrimary = async (protocol, host, id, user_id) => {
                         attributes: [],
                     }
                 ],
+            },
+            {
+                model: shares,
+                as: "shares",
+                attributes: [],
             }
         ],
     });
@@ -231,7 +256,8 @@ export const findPostingsUser = async ({ id, limit, offset, protocol, host, user
             "createdAt",
             [Sequelize.fn('COUNT', Sequelize.fn('DISTINCT', Sequelize.col('comments.comment_id'))), 'total_comments'],
             [Sequelize.fn('COUNT', Sequelize.col('comments.mentions.id')), 'total_mentions'],
-            [Sequelize.fn('COUNT', Sequelize.fn("DISTINCT", Sequelize.col('all_likes.id'))), 'total_likes']
+            [Sequelize.fn('COUNT', Sequelize.fn("DISTINCT", Sequelize.col('all_likes.id'))), 'total_likes'],
+            [Sequelize.fn("COUNT", Sequelize.fn("DISTINCT", Sequelize.col("shares.id"))), "total_shares"],
         ],
         include: [
             {
@@ -259,6 +285,11 @@ export const findPostingsUser = async ({ id, limit, offset, protocol, host, user
                         attributes: [],
                     }
                 ],
+            },
+            {
+                model: shares,
+                as: "shares",
+                attributes: [],
             }
         ],
         order: [['createdAt', 'ASC']],

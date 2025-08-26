@@ -21,6 +21,7 @@ export const defineSocket = (io) => {
         const id = socket.id;
         cache.set(user_id, id);
         console.log("user telah connect", user_id);
+        io.emit("user_active", ({ id: user_id, is_active: true }));
         // memastikan tidak ada pesan yang menumpuk
         const datasSaved = cache.get(`receiver-offline-${user_id}`);
         if (datasSaved) {
@@ -106,10 +107,11 @@ export const defineSocket = (io) => {
         socket.on("user_active", ({ id, is_active }) => {
             const target = cache.get(id);
             is_active = target ? true : false;
-            io.to(id).emit("user_active", ({ id, is_active }))
+            io.to(socket.id).emit("user_active", ({ id, is_active }));
         });
         socket.on("notifications", async ({ id, receiver_id, actor_id, object_id, verb, message, user, data }) => {
             if (receiver_id === actor_id) return;
+            if (!receiver_id && !object_id) return;
             const notif = await findNotif(receiver_id, object_id);
             if (notif && verb === 'like') return;
             const target = cache.get(actor_id);
@@ -131,10 +133,10 @@ export const defineSocket = (io) => {
             await insertNotif(id, receiver_id, actor_id, verb, object_id, message, is_read, data);
         });
         socket.on("disconnect", () => {
+            io.emit("user_active", ({ id: user_id, is_active: false }));
             console.log("user id telah logout", user_id);
             cache.delete(user_id);
             cache.delete(`room:${user_id}`);
-            console.log(cache.get((`room:${user_id}`)));
         })
     });
 }

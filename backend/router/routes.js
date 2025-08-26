@@ -2,6 +2,8 @@ import Express from 'express';
 import multer from 'multer';
 import session from 'express-session';
 import passport from 'passport';
+import path from 'path';
+import fs from 'fs';
 import { Strategy } from 'passport-google-oauth20';
 import { getUser, getUserFromUsername, getUsers, Login, Logout, Register, updateAccessToken } from '../controllers/UsersController.js';
 import { createPosting, getPosting, getPostings, getPostingsUser } from '../controllers/PostingsController.js';
@@ -13,13 +15,23 @@ import { createImagesPosting } from '../controllers/ImagesPostingController.js';
 import { createNotif, getNotifNotRead, getNotifs, updateNotifId } from '../controllers/NotificationsController.js';
 import { CreateProfile, updateImageCover, updateProfile, updateProfilePicture } from '../controllers/ProfileController.js';
 import { createMessage, deleteMessage, getMessages, getSecret, updateMessageUnread } from '../controllers/MessagesController.js';
-import { createConverstation, getConverstations } from '../controllers/ConverstationController.js';
+import { createConverstation, getConverstation, getConverstations } from '../controllers/ConverstationController.js';
 import { createMention, getMention, getMentions } from '../controllers/mentionsController.js';
 import { createFollow, getFollowers, getFollowings, getNotFollowings, unFollow } from '../controllers/followsController.js';
 import { AuthGoogle } from '../controllers/AuthGoogleController.js';
+import { createShare, deleteShare } from '../controllers/ShareController.js';
 
 const storage = multer.diskStorage({
-    destination: "public/images/",
+    destination: (req, file, cb) => {
+        const dir = path.join(process.cwd(), 'public', 'images');
+        
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
+            console.log("berhasil membuat folder public/images");
+        }
+        
+        cb(null, dir);
+    },
     filename: (req, file, cb) => {
         cb(null, `${Date.now()}-${file.originalname.toLowerCase()}`)
     }
@@ -102,15 +114,19 @@ routes.post('/message/unread', verifyToken, updateMessageUnread);
 
 routes.post('/converstation', verifyToken, createConverstation);
 routes.get('/converstations', verifyToken, getConverstations);
+routes.get('/converstation/:id', verifyToken, getConverstation);
 
 routes.post('/mention', verifyToken, createMention);
 routes.get('/mentions/:id', getMentions);
 routes.get('/mention/:id', getMention);
 
 routes.post('/follow', verifyToken, createFollow);
-routes.get('/:username/followers', verifyToken, getFollowers);
-routes.get('/:username/followings', verifyToken, getFollowings);
+routes.get('/:username/followers', verifyTokenIfAny, getFollowers);
+routes.get('/:username/followings', verifyTokenIfAny, getFollowings);
 routes.get('/not/followings', verifyToken, getNotFollowings);
 routes.delete('/follow/:id', verifyToken, unFollow);
+
+routes.post('/share', verifyToken, createShare);
+routes.delete('/shared/:id', verifyToken, deleteShare);
 
 export default routes;

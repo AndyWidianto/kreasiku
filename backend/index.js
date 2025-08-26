@@ -6,10 +6,8 @@ import cookieParser from 'cookie-parser';
 import { Server } from 'socket.io';
 import { createServer } from 'http';
 import { defineSocket } from './socket.js';
-import messages from './models/Messages.js';
-messages.sync({ force: true });
 
-
+db.sync({ alter: false });
 const app = express();
 const server = new createServer(app);
 app.use(cookieParser()).use(express.json()).use(cors({
