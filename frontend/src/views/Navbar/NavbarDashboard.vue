@@ -1,10 +1,10 @@
 <script setup>
 import { Bell, Heart, MessageCircle, Search, UserPlus2, User2, LogOut, Home, AtSign } from 'lucide-vue-next';
-import { inject, onMounted, reactive, ref } from 'vue';
+import { inject, onMounted, ref } from 'vue';
 import { RouterLink, useRouter } from 'vue-router';
-import NavbarDashboardPresenter from '../../presenters/NavbarDashboardPresenter';
 import LoadingSpinner from '../components/loadings/LoadingSpinner.vue';
-import data from '../../models/data';
+import { useNotifStore } from '../../stores/notifStore';
+import Loading from '../components/loadings/Loading.vue';
 
 
 const props = defineProps({
@@ -12,32 +12,22 @@ const props = defineProps({
     width: Boolean
 });
 const DropDownNotifikasi = ref(false);
-const NotificationsNotRead = ref([]);
-const notifications = ref([]);
 const refDropDownProfile = ref(false);
-const loading = ref(false);
 const router = useRouter();
 const profile = ref();
 const notif = ref();
 const socket = inject("socket");
+const loadMore = ref(null);
 
-const presenter = new NavbarDashboardPresenter({
-    model: new data(),
-    view: {
-        NotificationsNotRead: NotificationsNotRead,
-        notifications: notifications,
-        loading: loading,
-        router: router
-    }
-})
+const notifStore = useNotifStore();
 function handleShowDropDown() {
     if (window.innerWidth < 750) {
         return router.push("/notifications");
     }
+    if (notifStore.notifications.length < 0) {
+        notifStore.getNotifications();
+    }
     DropDownNotifikasi.value = !DropDownNotifikasi.value;
-}
-function Logout() {
-    presenter.Logout();
 }
 function handleClick(e) {
     if (profile.value && !profile.value.contains(e.target)) {
@@ -47,8 +37,8 @@ function handleClick(e) {
         DropDownNotifikasi.value = false;
     }
 }
-function handleUpdateNotif(index) {
-    presenter.updateNotif(notifications.value[index].id, notifications.value, NotificationsNotRead.value);
+function handleSearch() {
+    router.push(`/search/${notifStore.search}`);
 }
 function handleCutContent(data) {
     if (!data) return;
@@ -58,117 +48,152 @@ function handleCutContent(data) {
     }
     return `${content?.slice(1, 30)}...`;
 }
-onMounted(() => {
-    presenter.getNotifications();
-    presenter.getNotificationNotRead();
-    window.addEventListener("click", handleClick);
-    socket.on("notifications", (newNotif) => {
-        const icon = newNotif.receiver.profile.profile_picture ? newNotif.receiver.profile.profile_picture : '/images/book.jpg';
-        new Notification(newNotif.receiver.username, 
-            { 
-                icon: icon, 
-                body: newNotif.message 
-            });
-        NotificationsNotRead.value.push(newNotif);
-        notifications.value.push(newNotif);
+function handleNotifications(newNotif) {
+    const icon = newNotif.receiver.profile.profile_picture ? newNotif.receiver.profile.profile_picture : '/images/book.jpg';
+    new Notification(newNotif.receiver.username,
+        {
+            icon: icon,
+            body: newNotif.message
+        });
+    notifStore.addNotifNotRead(newNotif);
+    notifStore.addNotif(newNotif);
+}
+
+let observer;
+function initObserver() {
+    if (observer) observer.disconnect();
+    observer = new IntersectionObserver((enteries) => {
+        enteries.forEach(entry => {
+            if (entry.isIntersecting) {
+                notifStore.getNotifications();
+            }
+        })
     })
+    if (loadMore.value) {
+        observer.observe(loadMore.value);
+    }
+}
+onMounted(() => {
+    notifStore.getNotificationNotRead();
+    window.addEventListener("click", handleClick);
+    socket.on("notifications", handleNotifications);
 });
 </script>
 <template>
     <ul
         class="flex items-center gap-4 p-2 px-6 color-app z-10 transition-all duration-300 fixed left-[0px] top-0 w-[calc(100%-0px)] md:left-[320px] md:w-[calc(100%-320px)]">
         <li class="w-3/5 md:w-2/5">
-            <form class="flex items-center relative">
+            <form @submit.prevent="handleSearch" class="flex items-center relative">
                 <button class="absolute left-4 text-gray-800">
                     <Search class="w-4 h-4" />
                 </button>
-                <input type="search" name="search" id="search" placeholder="Search"
+                <input type="search" name="search" id="search" v-model="notifStore.search" placeholder="Search"
                     class="p-[8px] pl-10 border-1 border-gray-300 bg-white w-full rounded-full">
             </form>
         </li>
         <li class="md:hidden">
             <RouterLink to="/" v-slot="{ isExactActive }">
-                <div :class="[isExactActive ? 'text-orange-500' : 'text-gray-800']"><Home class="w-6 h-6" /></div>
+                <div :class="[isExactActive ? 'text-orange-500' : 'text-gray-800']">
+                    <Home class="w-6 h-6" />
+                </div>
             </RouterLink>
         </li>
         <li class="md:hidden">
             <RouterLink to="/chat" v-slot="{ isExactActive }">
-                <div :class="[isExactActive ? 'text-orange-500' : 'text-gray-800']"><MessageCircle class="w-6 h-6" /></div>
+                <div :class="[isExactActive ? 'text-orange-500' : 'text-gray-800']">
+                    <MessageCircle class="w-6 h-6" />
+                </div>
             </RouterLink>
         </li>
         <li class="ml-auto relative">
             <button class="flex items-center realtive" @click="handleShowDropDown" ref="notif">
                 <Bell class="w-6 h-6 fill-gray-600 text-gray-600" />
                 <div class="flex items-center absolute left-3 justify-center text-xss"
-                    :class="[NotificationsNotRead.length !== 0 ? 'rounded-full w-4 h-4 p-1 bg-red-500 text-gray-100' : '']">
-                    {{ NotificationsNotRead.length !== 0 ? NotificationsNotRead.length : '' }}
+                    :class="[notifStore.NotificationsNotRead.length !== 0 ? 'rounded-full w-4 h-4 p-1 bg-red-500 text-gray-100' : '']">
+                    {{ notifStore.NotificationsNotRead.length !== 0 ? notifStore.NotificationsNotRead.length : '' }}
                 </div>
             </button>
             <ul class="flex-col bg-gray-100 absolute right-0 w-100 max-h-80 overflow-y-scroll scroll-hidden"
                 :class="[DropDownNotifikasi ? 'flex' : 'hidden']">
-                <li v-if="loading" class="flex justify-center">
-                    <LoadingSpinner :LoadingSize="'6'" :hieghtContent="'6'" :widthContent="'6'" />
-                </li>
-                <li v-else v-for="(notification, index) in notifications">
-                    <RouterLink :to="`/posting/${notification.object_id}?comment=${JSON.parse(notification.data).comment_id}`" v-if="notification?.verb === 'comment'" class="flex gap-2 p-2" :class="[notification.is_read === 'false' ? 'bg-orange-100' : '']" @click="handleUpdateNotif(index)">
+                <li v-for="(notification, index) in notifStore.notifications">
+                    <RouterLink
+                        :to="`/posting/${notification.object_id}?comment=${JSON.parse(notification.data).comment_id}`"
+                        v-if="notification?.verb === 'comment'" class="flex gap-2 p-2"
+                        :class="[notification.is_read === 'false' ? 'bg-orange-100' : '']"
+                        @click="notifStore.updateNotif(index)">
                         <div class="flex items-end relative">
-                            <img :src="notification.receiver.profile.profile_url || '/images/book.jpg'" alt="" class="w-10 h-10 object-cover p-2 rounded-full">
+                            <img :src="notification.receiver.profile.profile_url || '/images/foto_default.jpg'" alt=""
+                                class="w-10 h-10 object-cover p-2 rounded-full">
                             <div class="absolute right-0">
                                 <MessageCircle class="w-4 h-4 text-green-500" />
                             </div>
                         </div>
                         <div class="">
-                            <h2><span class="font-bold">{{ notification.receiver.username }}</span>{{ notification.message }}</h2>
+                            <h2><span class="font-bold">{{ notification.receiver.username }}</span>{{
+                                notification.message }}</h2>
                             <div class="">"{{ handleCutContent(notification.data) }}"</div>
                         </div>
                     </RouterLink>
-                    <RouterLink class="flex gap-2 p-2" @click="handleUpdateNotif(index)" v-else-if="notification?.verb === 'follow'"
-                    :class="[notification.is_read === 'false' ? 'bg-orange-100' : '']" >
+                    <RouterLink class="flex gap-2 p-2" @click="notifStore.updateNotif(index)"
+                        v-else-if="notification?.verb === 'follow'"
+                        :class="[notification.is_read === 'false' ? 'bg-orange-100' : '']">
                         <div class="flex items-end relative">
-                            <img :src="notification.receiver.profile.profile_url || '/images/book.jpg'" alt="" class="w-10 h-10 object-cover p-2 rounded-full">
+                            <img :src="notification.receiver.profile.profile_url || '/images/book.jpg'" alt=""
+                                class="w-10 h-10 object-cover p-2 rounded-full">
                             <div class="absolute right-0">
                                 <UserPlus2 class="w-4 h-4 text-blue-500" />
                             </div>
                         </div>
                         <div class="">
-                            <h2><span class="font-bold">{{ notification.receiver.username }}</span> Mengirim permintaan pertemanan</h2>
+                            <h2><span class="font-bold">{{ notification.receiver.username }}</span> Mengirim permintaan
+                                pertemanan</h2>
                             <div class="">"{{ notification.data ? handleCutContent(notification.data) : '' }}"</div>
                             <button
                                 class="text-orange-500 font-semibold text-xs rounded-md p-2 px-3 border-1 border-gray-300">follback</button>
                         </div>
                     </RouterLink>
-                    <RouterLink :to="`/posting/${notification.object_id}`" @click="handleUpdateNotif(index)" v-else-if="notification?.verb === 'like'"
-                        class="flex gap-2 p-2" :class="[notification.is_read === 'false' ? 'bg-orange-100' : '']">
+                    <RouterLink :to="`/posting/${notification.object_id}`" @click="notifStore.updateNotif(index)"
+                        v-else-if="notification?.verb === 'like'" class="flex gap-2 p-2"
+                        :class="[notification.is_read === 'false' ? 'bg-orange-100' : '']">
                         <div class="flex items-end relative">
-                            <img :src="notification.receiver.profile.profile_url || '/images/book.jpg'" alt="profile" class="w-10 h-10 object-cover p-2 rounded-full">
+                            <img :src="notification.receiver.profile.profile_url || '/images/book.jpg'" alt="profile"
+                                class="w-10 h-10 object-cover p-2 rounded-full">
                             <div class="absolute right-0">
                                 <Heart class="w-4 h-4 text-orange-500 fill-orange-500" />
                             </div>
                         </div>
                         <div class="">
-                            <h2><span class="font-bold">{{ notification.receiver.username }}</span> 
+                            <h2><span class="font-bold">{{ notification.receiver.username }}</span>
                                 menyukai postingan anda
                             </h2>
                             <div class="">"{{ handleCutContent(notification.data) }}"</div>
                         </div>
                     </RouterLink>
-                    <RouterLink :to="`/posting/${notification.object_id}?comment=${JSON.parse(notification.data).comment_id}&mention=${JSON.parse(notification.data).id}`" @click="handleUpdateNotif(index)" v-else-if="notification?.verb === 'mention'"
+                    <RouterLink
+                        :to="`/posting/${notification.object_id}?comment=${JSON.parse(notification.data).comment_id}&mention=${JSON.parse(notification.data).id}`"
+                        @click="notifStore.updateNotif(index)" v-else-if="notification?.verb === 'mention'"
                         class="flex gap-2 p-2" :class="[notification.is_read === 'false' ? 'bg-orange-100' : '']">
                         <div class="flex items-end relative">
-                            <img :src="notification.receiver.profile.profile_url || '/images/book.jpg'" alt="profile" class="w-10 h-10 object-cover p-2 rounded-full">
+                            <img :src="notification.receiver.profile.profile_url || '/images/book.jpg'" alt="profile"
+                                class="w-10 h-10 object-cover p-2 rounded-full">
                             <div class="absolute right-0">
                                 <AtSign class="w-4 h-4 text-blue-500" />
                             </div>
                         </div>
                         <div class="">
-                            <h2><span class="font-bold">{{ notification.receiver.username }}</span> 
+                            <h2><span class="font-bold">{{ notification.receiver.username }}</span>
                                 menyukai postingan anda
                             </h2>
                             <div class="">"{{ handleCutContent(notification.data) }}"</div>
                         </div>
                     </RouterLink>
                 </li>
-                <li class="flex justify-center">No more notification</li>
+                <li class="flex justify-center">
+                    <p class="flex justify-center text-orange-500 p-2" ref="loadMore" v-if="notifStore.hasMore">
+                        <Loading :size="6" :borderSize="3" />
+                    </p>
+                    <p v-else>No More notification</p>
+                </li>
             </ul>
         </li>
         <li class="grid items-center shrink-0 w-10 h-10 relative" ref="profile">
@@ -186,7 +211,7 @@ onMounted(() => {
                     </RouterLink>
                 </li>
                 <li class="w-full">
-                    <button @click="Logout"
+                    <button @click="notifStore.logout()"
                         class="flex justify-center items-center gap-1 w-full hover:bg-gray-200 p-2 px-3 text-red-600">
                         <LogOut class="w-4 h-4" />
                         Logout

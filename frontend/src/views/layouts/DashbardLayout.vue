@@ -27,9 +27,7 @@ onMounted(() => {
                 <NavbarDashboard :user="user" />
             </header>
             <main class="pt-15 flex justify-center">
-                <KeepAlive>
-                    <RouterView />
-                </KeepAlive>
+                <RouterView />
             </main> 
             <footer></footer>
         </div>

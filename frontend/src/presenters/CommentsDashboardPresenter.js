@@ -43,21 +43,22 @@ export default class CommentsDashboardPresenter {
         }
     }
     async handleActionsLike(posting, user_id) {
-        const findLike = posting.likes.findIndex(like => like.user_id === user_id && like.posting_id === posting.posting_id);
-        if (findLike < 0) {
+        if (!posting.like) {
             const id = nanoid();
-            posting.likes.push({
+            posting.like = {
                 id: id,
                 user_id: user_id,
                 posting_id: posting.posting_id
-            })
+            }
             posting.is_like = true;
+            posting.total_likes = posting.total_likes + 1;
             await this.#model.createLike(posting.posting_id, id);
         } else {
-            const like = posting.likes[findLike];
-            posting.likes = posting.likes.filter(value => value.id !== like.id);
+            const like = posting.like;
+            posting.like = null;
             posting.is_like = false;
-            await this.#model.deleteLike(like.id);
+            posting.total_likes = posting.total_likes - 1;
+            await this.#model.deleteLikePosting(like.id);
         }
         this.#view.posting.value = posting;
     }
@@ -67,7 +68,7 @@ export default class CommentsDashboardPresenter {
             this.#view.showDropdownUser.value = true;
             const query = mantionMatch[1].toLowerCase();
             setTimeout(async () => {
-                const res = await this.#model.getUsersFromUsername(query);
+                const res = await this.#model.getUsersFromUsername(query, 20, 0);
                 this.#view.suggestions.value = res.data;
             }, 100);
         } else {

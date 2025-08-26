@@ -32,7 +32,7 @@ const props = defineProps({
                     </RouterLink>
                 </li>
                 <li>
-                    <RouterLink to="/followers" v-slot="{ isExactActive }">
+                    <RouterLink to="/not/followers" v-slot="{ isExactActive }">
                         <div class="flex items-center gap-2 p-2 border-r-3"
                             :class="isExactActive ? 'border-orange-600 bg-orange-100 font-semibold text-orange-600' : 'border-transparent'">
                             <UserRoundPlus class="w-5 h-5" /> Friends

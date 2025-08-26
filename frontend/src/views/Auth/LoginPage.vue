@@ -1,29 +1,37 @@
 <script setup>
-import { reactive, ref } from 'vue';
+import { inject, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import data from '../../models/data';
 import LoginPresenter from '../../presenters/LoginPresenter';
 import LoadingSpinner from '../components/loadings/LoadingSpinner.vue';
-import { Hash, Lock, LockOpen, User2 } from 'lucide-vue-next';
+import { AlertCircle, Hash, Lock, LockOpen, User2 } from 'lucide-vue-next';
 
 const state = reactive({
     username: '',
     password: '',
 });
+const lockPassword = ref(true);
+const error = ref('');
+const message = ref('');
 const loading = ref(false);
 const navigate = useRouter();
+const socket = inject('socket');
 
 const presenter = new LoginPresenter({
     model: new data(),
     view: {
         loading: loading,
-        navigate: navigate
+        navigate: navigate,
+        error: error,
+        message: message
     }
 })
 async function Login() {
-    console.log("Username", state.username);
-    console.log("Password", state.password);
-    await presenter.Login(state.username, state.password);
+    await presenter.Login(state.username, state.password, socket);
+}
+
+function handleAuthGoogle() {
+    window.location.href = 'http://localhost:3000/auth/google';
 }
 </script>
 <template>
@@ -42,19 +50,24 @@ async function Login() {
                             <input type="text" name="username" id="username" v-model="state.username"
                                 class="w-full p-2 pl-8 border-1 border-gray-400 rounded-md">
                         </div>
+                        <div v-if="error === 'username'" class="flex items-center gap-1 text-sm font-semiblod text-red-500">
+                            <AlertCircle class="w-4 h-4" />
+                            <p>{{ message }}</p>
+                        </div>
                     </div>
                     <div class="p-2">
                         <label for="">password</label>
                         <div class="flex items-center relative w-full">
-                            <div class="absolute left-2">
-                                <Hash class="w-5 h-5 text-gray-600" />
-                            </div>
                             <input :type="lockPassword ? 'password' : 'text'" v-model="state.password" name="password" id="password"
-                                class="w-full p-2 pl-8 border-1 border-gray-400 rounded-md">
+                                class="w-full p-2 border-1 border-gray-400 rounded-md">
                             <div class="absolute right-0 px-2" @click="() => lockPassword = !lockPassword">
                                 <Lock v-if="lockPassword" class="w-5 h-5 text-gray-800" />
                                 <LockOpen v-else class="w-5 h-5 text-gray-800" />
                             </div>
+                        </div>
+                        <div v-if="error === 'password'" class="flex items-center gap-1 text-sm font-semiblod text-red-500">
+                            <AlertCircle class="w-4 h-4" />
+                            <p>{{ message }}</p>
                         </div>
                     </div>
                     <div class="pt-10 p-2">
@@ -66,9 +79,12 @@ async function Login() {
                     <p class="w-full text-gray-500 py-1 text-center">or</p>
                 </form>
                 <div class="flex justify-center gap-4">
-                    <button class="flex justify-center items-center w-11 h-11 border-1 border-gray-300 text-gray-300 rounded-full">
+                    <button @click="handleAuthGoogle" class="flex justify-center items-center w-11 h-11 border-1 border-gray-300 text-gray-300 rounded-full">
                         <img src="/images/logo_google.png" alt="" class="w-8 h-8 object-cover">
                     </button>
+                </div>
+                <div class="text-center mt-4">
+                    <span>if don't have account <RouterLink to="/register" class="text-blue-500 hover:underline">register</RouterLink></span>
                 </div>
             </div>
             <div class="w-1/2 h-150">

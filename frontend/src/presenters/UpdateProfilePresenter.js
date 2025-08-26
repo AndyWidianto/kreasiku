@@ -1,7 +1,7 @@
-
-export default class CreateProfilePresenter {
+export default class UpdateProfilePresenter {
     #model;
     #view;
+
     constructor({ model, view }) {
         this.#model = model;
         this.#view = view;
@@ -11,29 +11,22 @@ export default class CreateProfilePresenter {
         try {
             const res = await this.#model.getUser();
             this.#view.user.value = res.data;
-            this.#view.name.value = res.data.username;
-            console.log(res);
-            if (res.data.profile) {
-                console.log("pindah halaman aktif...");
-                this.#view.router.push("/");
-            }
         } catch (err) {
             console.error(err);
-            this.#view.router.push("/Register");
         }
     }
-    async CreateProfile(data, image) {
+    async updateProfile(data, image) {
         this.#view.loading.value = true;
         try {
-            const formData = new FormData();
-            const res = await this.#model.CreateProfile(data);
             if (image) {
+                const formData = new FormData();
                 formData.append("profile_picture", image);
-                const resImage = await this.#model.updateProfilePicture(formData);
-                console.log(resImage);
+                const res = await this.#model.updateProfilePicture(formData);
+                console.log(res);
             }
+            const res = await this.#model.updateProfile(data);
             console.log(res);
-            this.#view.router.push("/");
+            this.#view.router.push(`/profile/${data.username}`);
         } catch (err) {
             console.error(err);
         } finally {

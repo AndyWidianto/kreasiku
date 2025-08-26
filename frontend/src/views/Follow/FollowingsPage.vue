@@ -87,11 +87,13 @@ watch(search, async (newValue) => {
                         <h3 class="font-medium text-gray-800">{{ follower?.following.profile.name }}</h3>
                         <p class="text-sm text-gray-500">{{ follower?.following.username }}</p>
                     </RouterLink>
-                    <div v-if="follower.my_following" class="flex space-x-2">
-                        <button @click="handleActionFollow(follower.id)"
-                            class="px-3 py-1 md:px-4 md:py-2 rounded-md text-sm md:text-base transition"
-                            :class="[follower.folback ? 'bg-white hover:bg-gray-200 text-gray-800 border border-orange-100' : 'bg-orange-600 hover:bg-orange-700 text-white']">
-                            {{ !follower.folback ? 'Follback' : 'Unfollow' }}
+                    <div v-if="follower.my_id !== follower.following.user_id" class="flex space-x-2">
+                        <button v-if="follower.my_follower" @click="handleActionFollow(follower.id)"
+                            class="px-3 py-1 md:px-4 md:py-2 rounded-md text-sm md:text-base transition bg-white hover:bg-gray-200 text-gray-800 border border-orange-100">
+                            Unfollow
+                        </button>
+                        <button v-else class="px-3 py-1 md:px-4 md:py-2 rounded-md text-sm md:text-base transition bg-orange-600 hover:bg-orange-700 text-white">
+                            Follow
                         </button>
                     </div>
                 </div>

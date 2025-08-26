@@ -9,7 +9,7 @@ const showImage = ref();
 const image = ref();
 const user = ref();
 const loading =ref();
-
+const width = ref(window.innerWidth);
 const Edit = ref();
 const presenter = new CreateCoverPresenter({
     model: new data(),
@@ -31,8 +31,13 @@ async function SaveImageCover() {
     if (!image) return;
     await presenter.updateCover(user.value.profile.profile_id, image.value);
 }
-onMounted(() => {
-    presenter.getUser();
+onMounted(async () => {
+    await presenter.getUser();
+    window.addEventListener('resize', () => {
+        width.value = window.innerWidth;
+        console.log(window.innerWidth);
+        console.log(typeof window.innerWidth);
+    });
 })
 </script>
 <template>
@@ -43,7 +48,7 @@ onMounted(() => {
         <div class="w-full pl-10 py-3">
             <RouterLink :to="`/profile/${user?.username}`"><ArrowLeft class="w-8 h-8" /></RouterLink>
         </div>
-        <div class="w-4/5 h-100 bg-black">
+        <div class="w-full lg:w-4/5 h-40 md:h-70 lg:h-80 bg-black">
             <img v-if="showImage" :src="showImage" alt="" class="w-full h-full object-cover">
             <img v-else :src="user?.profile.cover_picture ? user?.profile.cover_picture : '/images/book.jpg'" alt="" class="w-full h-full object-cover">
             <input type="file" @change="handleSelectImage" name="edit" id="edit" accept="image/*" ref="Edit" hidden>

@@ -27,6 +27,13 @@ const presenter = new FollowerPresenter({
 function handleActionFollow(id) {
     presenter.handleActionFollow(id, followers.value);
 }
+function Follow(id) {
+    presenter.createFollow(id, users.value);
+}
+function unFollow(id) {
+    presenter.deleteFollow(id, users.value);
+}
+
 let observer;
 function initObserver() {
     if (observer) observer.disconnect();
@@ -87,11 +94,11 @@ watch(search, async (newValue) => {
                         <h3 class="font-medium text-gray-800">{{ follower?.follower.profile.name }}</h3>
                         <p class="text-sm text-gray-500">{{ follower?.follower.username }}</p>
                     </RouterLink>
-                    <div v-if="follower.ime" class="flex space-x-2">
-                        <button @click="handleActionFollow(follower.id)"
+                    <div v-if="follower.mine" class="flex space-x-2">
+                        <button @click="handleActionFollow(follower.follower.user_id)"
                             class="px-3 py-1 md:px-4 md:py-2 rounded-md text-sm md:text-base transition"
-                            :class="[follower.folback ? 'bg-white hover:bg-gray-200 text-gray-800 border border-orange-100' : 'bg-orange-600 hover:bg-orange-700 text-white']">
-                            {{ !follower.folback ? 'Follback' : 'Unfollow' }}
+                            :class="[follower.follow ? 'bg-white hover:bg-gray-200 text-gray-800 border border-orange-100' : 'bg-orange-600 hover:bg-orange-700 text-white']">
+                            {{ follower.follow ? 'Unfollow' : 'Follow' }}
                         </button>
                     </div>
                 </div>

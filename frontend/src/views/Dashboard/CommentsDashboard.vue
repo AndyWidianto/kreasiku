@@ -30,6 +30,10 @@ const loading = ref(false);
 const limitMentions = ref(5);
 const pageMentions = ref(1);
 const loadingMentions = ref(false);
+const showImages = ref(false);
+const images = ref({});
+const name = ref('');
+const startImage = ref(0);
 
 const presenter = new CommentsDashboardPresenter({
     model: new data(),
@@ -48,6 +52,18 @@ const presenter = new CommentsDashboardPresenter({
         loadingMentions: loadingMentions,
     }
 });
+function handleShowImages(indexImage) {
+    images.value = posting.value.images;
+    name.value = posting.value.user.value.profile.name;
+    startImage.value = indexImage;
+    showImages.value = true;
+}
+function handleDestroyShowImages() {
+    images.value = [];
+    showImages.value = false;
+    name.value = '';
+    startImage.value = 0;
+}
 function handleSelectKey() {
     presenter.handleSelectKey(content.value);
 }
@@ -148,11 +164,12 @@ watch(content, (newValue) => {
 </script>
 
 <template>
+    <ShowImagePage v-if="showImages" :images="images" :start="startImage" :goBack="handleDestroyShowImages" :Name="name" />
     <div class="flex justify-center w-full md:p-2">
         <div class="w-full lg:w-2xl">
             <RouterLink :to="`/profile/${posting?.user.username}`" class="flex items-center gap-3 p-2">
                 <div class="w-10 h-10 shrink-0">
-                    <img :src="posting?.user.profile.profile_picture ? posting?.user.profile.profile_picture : '/images/book.jpg'"
+                    <img :src="posting?.user.profile.profile_picture ? posting?.user.profile.profile_picture : '/images/foto_default.jpg'"
                         alt="image posting" class="w-full h-full object-cover rounded-full border-1">
                 </div>
                 <div class="w-full">
@@ -174,29 +191,29 @@ watch(content, (newValue) => {
                 <!-- untuk gambar kurang dari 2 -->
                 <div v-if="posting?.images.length == 1" class="flex flex-wrap justify-around items-center">
                     <div class="flex items-center w-full bg-black">
-                        <img v-for="image in posting.images" :src="image.image" :key="image.image_id"
+                        <img v-for="(image, indexImage) in posting.images" :src="image.image" :key="image.image_id" @click="handleShowImages(indexImage)"
                             alt="image posting" class="w-full max-h-150 object-cover">
                     </div>
                 </div>
                 <!-- untuk gambar 2 -->
                 <div v-if="posting?.images.length < 3 && posting?.images.length > 1" class="flex flex-wrap justify-center items-center">
                     <div class="grid grid-cols-2 gap-[1px] w-full max-h-150">
-                        <img v-for="image in posting.images" :src="image.image" :key="image.image_id"  @click="handleShowImage(posting.images, image.image_id)"
+                        <img v-for="(image, indexImage) in posting.images" :src="image.image" :key="image.image_id" @click="handleShowImages(indexImage)"
                             alt="image posting" class="w-full h-full object-cover">
                     </div>
                 </div>
                 <!-- untuk gambar lebih dari 2 -->
                 <div v-if="posting?.images.length > 2" class="flex items-center justify-center">
                     <div class="grid grid-cols-3 gap-1 grid-rows-2 w-full max-h-150">
-                        <img v-for="(image, indexImage) in posting.images.slice(0, 3)" :key="image.image_id"  @click="handleShowImage(posting.images, image.image_id)"
+                        <img v-for="(image, indexImage) in posting.images.slice(0, 3)" :key="image.image_id" @click="handleShowImages(indexImage)"
                             :src="image.image" alt="image posting" class="h-full w-full object-cover"
                             :class="[indexImage === 0 ? 'col-span-2 row-span-1 row-span-2' : '']">
                     </div>
                 </div>
                 <div class="px-1 md:px-0 flex items-center gap-2 text-sm">
-                    <button>{{ posting?.likes.length }} likes</button>
+                    <button>{{ posting?.total_likes }} likes</button>
                     <button>{{ posting?.total_comments + posting?.total_mentions }} comments</button>
-                    <button>111 shares</button>
+                    <button>{{ posting?.total_shares }} shares</button>
                 </div>
                 <div class="flex items-center">
                     <button @click="likePosting" class="p-2 px-4">
@@ -217,10 +234,10 @@ watch(content, (newValue) => {
                     <div class="flex items-start w-full gap-2">
                         <img :src="comment.user.profile.profile_picture ? comment.user.profile.profile_picture : '/images/book.jpg'"
                             alt="" class="w-9 h-9 rounded-full space-x-2 shrink-0">
-                        <div class="p-0 m-0 w-full leading-none">
+                        <div class="p-0 m-0 w-full">
                             <RouterLink :to="`/profile/${comment.user.username}`" class="font-semibold">{{
                                 comment.user.username }}</RouterLink>
-                            <p class="px-1 md:px-0 text-gray-800">
+                            <p class="px-1 md:px-0 text-gray-800 leading-none">
                                 <span v-for="content in comment.content.split(/(@\w+)/g)">
                                     <RouterLink v-if="content.startsWith('@')" :to="`/profile/${content.slice(1)}`"
                                         class="text-blue-600 hover:underline">{{ content }}</RouterLink>

@@ -29,8 +29,8 @@ export default class FollowingsPresenter {
     }
     async handleActionFollow(id, followers) {
         const findIndex = followers.findIndex(follower => follower.id === id);
-        const user_id = followers[findIndex].follower.user_id;
-        console.log(user_id);
+        console.log(followers[findIndex]);
+        const user_id = followers[findIndex].following.user_id;
         if (followers[findIndex].folback) {
             followers[findIndex].folback = false;
             this.deleteFollow(user_id);

@@ -14,6 +14,7 @@ import NotificationPage from "../views/Notification/NotificationPage.vue";
 import NotFollowingPage from "../views/Follow/NotFollowingPage.vue";
 import FollowerPage from "../views/Follow/FollowerPage.vue";
 import FollowingsPage from "../views/Follow/FollowingsPage.vue";
+import UpdateProfile from "../views/Profile/UpdateProfile.vue";
 
 
 const routes = [
@@ -70,6 +71,10 @@ const routes = [
     {
         path: "/search/:search",
         component: SearchPage
+    },
+    {
+        path: "/update/profile",
+        component: UpdateProfile
     },
     {
         path: "/chat",

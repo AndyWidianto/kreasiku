@@ -6,7 +6,7 @@ import data from '../../models/data';
 import { useRouter } from 'vue-router';
 import LoadingSpinner from '../components/loadings/LoadingSpinner.vue';
 
-const inputProfile = ref();
+const changeProfile = ref();
 const loading = ref(false);
 const user = ref({});
 const state = reactive({
@@ -17,13 +17,13 @@ const state = reactive({
 });
 
 const name = ref('');
+const image = ref();
+const router = useRouter();
 const formData = reactive({
-    profile: '',
     description: '',
     gender: '',
     date_of_birth: '',
-    address: '',
-    router: useRouter()
+    address: ''
 });
 const presenter = new CreateProfilePresenter({
     model: new data(),
@@ -31,21 +31,21 @@ const presenter = new CreateProfilePresenter({
         loading: loading,
         user: user,
         name: name,
-        router: state.router
+        router: router
     }
 })
 
 function ChangeProfile(e) {
-    const image = e.target.files[0];
-    state.previewProfile = URL.createObjectURL(image);
-    formData.profile = image;
+    const file = e.target.files[0];
+    state.previewProfile = URL.createObjectURL(file);
+    image.value = file;
 }
 function handlePlusPagnation() {
     if (state.Pagnation > state.MaxPagnation) state.Pagnation = 1;
     state.Pagnation += 1;
 }
 function CreateProfile() {
-    presenter.CreateProfile(formData);
+    presenter.CreateProfile(formData, image.value);
 }
 onMounted(() => {
     presenter.getUser();
@@ -54,11 +54,11 @@ onMounted(() => {
 <template>
     <Transition name="fade-slide">
         <div v-if="state.Pagnation === 1" class="flex flex-col items-center justify-center gap-6 h-screen w-full absolute">
-            <input type="file" name="profile" id="profile" @change="ChangeProfile" ref="inputProfile" hidden>
+            <input type="file" name="profile" id="profile" @change="ChangeProfile" ref="changeProfile" hidden>
             <div class="flex flex-col items-center justify-center w-xl gap-1">
                 <h2 class="text-lg text-center font-bold">Foto Profile</h2>
-                <button @click="() => inputProfile.click()" class="w-50 h-50 rounded-full border-1 relative">
-                    <img :src="state.previewProfile !== '' ? state.previewProfile : '/images/book.jpg'" alt=""
+                <button @click="() => changeProfile.click()" class="w-50 h-50 rounded-full border-1 relative">
+                    <img :src="state.previewProfile !== '' ? state.previewProfile : '/images/foto_default.jpg'" alt=""
                         class="w-full h-full object-cover rounded-full">
                     <div class="absolute bottom-0 right-5 p-1 px-3 border-1 rounded-md bg-gray-100 border-gray-300">
                         <Camera class="w-5 h-5 text-gray-700" />
