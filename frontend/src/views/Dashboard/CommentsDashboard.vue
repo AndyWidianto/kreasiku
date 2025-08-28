@@ -287,7 +287,7 @@ watch(content, (newValue) => {
                         class="w-full text-start text-xs font-semibold text-gray-700 p-1">lihat balasan({{
                             handleTotalMentions(comment) }})</button>
                 </div>
-                <p class="flex justify-center p-2" ref="loadMore" v-if="hasMore">
+                <p class="flex justify-center text-orange-500 p-2" ref="loadMore" v-if="hasMore">
                     <Loading :size="6" :borderSize="3" />
                 </p>
             </div>

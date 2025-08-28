@@ -1,10 +1,11 @@
 <script setup>
-import { KeepAlive, onMounted, ref } from 'vue';
+import { KeepAlive, onMounted, ref, watch } from 'vue';
 import data from '../../models/data';
 import DashboardLayoutPresenter from '../../presenters/DashboardLayoutPresenter';
 import NavbarDashboard from '../Navbar/NavbarDashboard.vue';
 import NavbarLeftDashboard from '../Navbar/NavbarLeftDashboard.vue';
 import { RouterView, useRouter } from 'vue-router';
+
 
 const user = ref(null);
 const router = useRouter();
@@ -17,7 +18,7 @@ const presenter = new DashboardLayoutPresenter({
 })
 onMounted(() => {
     presenter.getUser();
-})
+});
 </script>
 <template>
     <div class="grid transition-all duration-300 grid-cols-[0px_1fr] md:grid-cols-[350px_1fr]">

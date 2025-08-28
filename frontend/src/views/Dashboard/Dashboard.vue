@@ -13,10 +13,10 @@ const refImage = ref();
 const loadMore = ref(null);
 const itemsRef = ref({});
 const itemsRefShare = ref({});
-const showImages = ref(false);
-const images = ref({});
-const name = ref('');
+const posting = ref(null);
 const startImage = ref(0);
+const showImage = ref(false);
+const origin = ref("center center");
 
 const dashboardStore = useDashboardStore();
 function handleChangeImage(e) {
@@ -29,7 +29,7 @@ function likePosting(posting, id_user_posting) {
     dashboardStore.handleActionsLike(posting, id_user_posting, socket);
 }
 function createPosting() {
-    dashboardStore.createPosting()
+    dashboardStore.createPosting();
 }
 function parseContent(content) {
     const newContent = content.split(/(#\w+)/g);
@@ -43,7 +43,7 @@ function handleParseDate(value) {
     const hours = ms / (1000 * 60 * 60);
     const days = ms / (1000 * 60 * 60 * 24);
     if (seconds < 60) {
-        return `${parseInt(seconds)} seconds`;
+        return `${parseInt(seconds)} detik`;
     }
     else if (hours < 24) {
         return `${parseInt(hours)} jam`;
@@ -72,17 +72,16 @@ function handleUpdateShow(index) {
 function handleUpdateShowShare(index) {
     dashboardStore.handleUpdateShowShare(index);
 }
-function handleShowImages(index, indexImage) {
-    images.value = dashboardStore.postings[index].images;
-    name.value = dashboardStore.postings[index].user.profile.name;
+function handleShowImages(e, index, indexImage) {
+    showImage.value = true;
     startImage.value = indexImage;
-    showImages.value = true;
+    posting.value = dashboardStore.postings[index];
+    origin.value = `${e.clientX}px ${e.clientY}px`;
 }
 function handleDestroyShowImages() {
-    images.value = [];
-    showImages.value = false;
-    name.value = '';
-    startImage.value = 0;
+    showImage.value = false;
+    startImage.value = null;
+    posting.value = null;
 }
 
 let observer = null;
@@ -109,10 +108,11 @@ onMounted(async () => {
 </script>
 <template>
     <Transition name="zoom">
-        <ShowImagePage v-if="showImages" :start="startImage" :images="images" :Name="name" :goBack="handleDestroyShowImages" />
+        <ShowImagePage v-if="showImage" :transformOrigin="origin" :start="startImage" :images="posting.images"
+            :Name="posting.user.username" :goBack="handleDestroyShowImages" />
     </Transition>
-    <div class="flex justify-center p-3" v-if="dashboardStore.showCreatePosting">
-        <div class="w-full lg:w-2xl lg:p-5 rounded-md bg-gray-100">
+    <div class="flex justify-center w-full p-3" v-if="dashboardStore.showCreatePosting">
+        <div class="w-full lg:w-2xl lg:p-5 rounded-md">
             <div class="flex items-center px-2 py-4">
                 <button @click="() => dashboardStore.showCreatePosting = false">
                     <ArrowLeft class="w-6 h-6" />
@@ -150,8 +150,9 @@ onMounted(async () => {
             </form>
         </div>
     </div>
-    <div class="w-full lg:w-2xl px-0 md:px-2" v-else>
-        <button @click="() => dashboardStore.showCreatePosting = true" class="flex items-center w-full text-start gap-2">
+    <div class="w-full lg:w-2xl px-0 md:px-2" v-show="!dashboardStore.showCreatePosting">
+        <button @click="() => dashboardStore.showCreatePosting = true"
+            class="flex items-center w-full text-start gap-2">
             <div class="w-full p-2">
                 <h2 class="text-xl font-semibold">Upload posting</h2>
                 <p class="text-xs text-gray-800">ceritakan pengalamanmu yang berharga</p>
@@ -168,7 +169,9 @@ onMounted(async () => {
                             alt="" class="w-full h-full object-cover rounded-full border-1">
                     </div>
                     <div class="w-full">
-                        <h2 class="text-lg font-semibold">{{ posting?.user.profile?.name }}<span class="mx-1 text-xs font-semibold text-gray-500">{{ handleParseDate(posting.updatedAt) }}</span></h2>
+                        <h2 class="text-lg font-semibold">{{ posting?.user.profile?.name }}<span
+                                class="mx-1 text-xs font-semibold text-gray-500">{{ handleParseDate(posting.updatedAt)
+                                }}</span></h2>
                         <p class="text-sm text-gray-600">{{ posting?.user.username }}</p>
                     </div>
                 </RouterLink>
@@ -204,28 +207,34 @@ onMounted(async () => {
                 <!-- untuk gambar kurang dari 2 -->
                 <div v-if="posting?.images.length == 1" class="flex flex-wrap justify-around items-center">
                     <div class="flex items-center w-full bg-black">
-                        <img v-for="(image, indexImage) in posting.images" :src="image.image" @click="handleShowImages(index, indexImage)" :key="image.image_id"
-                            alt="image posting" class="w-full max-h-150 object-cover">
-                        
+                        <div v-for="(image, indexImage) in posting.images" class="w-full max-h-150"
+                            :key="image.image_id">
+                            <img :src="image.image" @click="(e) => handleShowImages(e, index, indexImage)"
+                                alt="image posting" class="block w-full max-h-150 object-cover">
+                        </div>
                     </div>
                 </div>
                 <!-- untuk gambar 2 -->
                 <div v-if="posting?.images.length < 3 && posting?.images.length > 1"
                     class="flex flex-wrap justify-center items-center">
                     <div class="grid grid-cols-2 gap-[1px] w-full max-h-150">
-                        <img v-for="(image, indexImage) in posting.images" :src="image.image" :key="image.image_id" alt="image posting"
-                        @click="handleShowImages(index, indexImage)"
-                        class="w-full h-full object-cover">
+                        <div v-for="(image, indexImage) in posting.images" class="w-full h-full" :key="image.image_id">
+                            <img :src="image.image" :key="image.image_id" alt="image posting"
+                                @click="(e) => handleShowImages(e, index, indexImage)"
+                                class="block w-full h-full object-cover">
+                        </div>
                     </div>
                 </div>
                 <!-- untuk gambar lebih dari 2 -->
-                <div v-if="posting?.images.length > 2"@click="handleShowImages(index)" class="flex items-center justify-center">
+                <div v-if="posting?.images.length > 2" class="flex flex-col items-center justify-center">
                     <div class="grid grid-cols-3 gap-1 grid-rows-2 w-full max-h-150">
-                        <img v-for="(image, indexImage) in posting.images.slice(0, 3)" :key="image.image_id" :src="image.image"
-                            alt="image posting" class="h-full w-full object-cover"
-                            @click="handleShowImages(index, indexImage)"
-                            :class="[indexImage === 0 ? 'col-span-2 row-span-1 row-span-2' : '']">
+                        <div v-for="(image, indexImage) in posting.images.slice(0, 3)" class="h-full w-full elative"
+                            :class="[indexImage === 0 ? 'col-span-2 row-span-1 row-span-2' : '']" :key="image.image_id">
+                            <img :src="image.image" alt="image posting" class="block h-full w-full object-cover"
+                                @click="(e) => handleShowImages(e, index, indexImage)">
+                        </div>
                     </div>
+                    <div v-if="posting?.images.length - 3 !== 0" class="font-semibold text-sm">{{ posting.images.length - 3 }} gambar lainnya</div>
                 </div>
                 <div class="px-1 md:px-0 flex items-center gap-2 text-sm">
                     <button>{{ posting?.total_likes }} likes</button>
@@ -240,7 +249,8 @@ onMounted(async () => {
                     <RouterLink :to="`/posting/${posting?.posting_id}`" class="p-2">
                         <MessageCircle class="w-6 h-6 text-gray-800" />
                     </RouterLink>
-                    <div :ref="(el) => SetItemRefShare(el, posting?.posting_id)" class="flex flex-col items-center relative">
+                    <div :ref="(el) => SetItemRefShare(el, posting?.posting_id)"
+                        class="flex flex-col items-center relative">
                         <div v-if="posting.showShare" class="flex flex-col items-center absolute bottom-5">
                             <div class="p-1 rounded-md bg-white p-2">
                                 <ul class="flex items-center gap-4">
@@ -251,14 +261,18 @@ onMounted(async () => {
                                         </button>
                                     </li>
                                     <li>
-                                        <svg role="img" width="15" height="15" fill="#25D366" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <svg role="img" width="15" height="15" fill="#25D366" viewBox="0 0 24 24"
+                                            xmlns="http://www.w3.org/2000/svg">
                                             <title>WhatsApp</title>
-                                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                                            <path
+                                                d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
                                         </svg>
                                     </li>
                                 </ul>
                             </div>
-                            <div class="w-0 border-15 border-l-transparent border-r-transparent border-b-transparent border-white"></div>
+                            <div
+                                class="w-0 border-15 border-l-transparent border-r-transparent border-b-transparent border-white">
+                            </div>
                         </div>
                         <button @click="handleUpdateShowShare(index)" class="p-2">
                             <Share2 class="w-6 h-6 text-gray-800" />
@@ -274,11 +288,14 @@ onMounted(async () => {
     </div>
 </template>
 <style>
-.zoom-enter-active, .zoom-leave-active {
-    transition: transform 0.2s ease-in;
+.zoom-enter-active,
+.zoom-leave-active {
+    transition: transform 200ms ease-in;
 }
-.zoom-enter-from, .zoom-leave-to {
-    transform: scaleZ(0.8);
+
+.zoom-enter-from,
+.zoom-leave-to {
+    transform: scale(0.9);
     opacity: 0;
 }
 </style>

@@ -1,48 +1,31 @@
 <script setup>
 import { ref, computed, nextTick, onMounted, inject, watch } from "vue";
-import ChatPresenter from "../../presenters/ChatPresenter";
-import data from "../../models/data";
 import { ArrowLeft, ArrowRight, Check, CheckCheck, ChevronLeft, Clock, Search, Trash2 } from "lucide-vue-next";
 import { useRoute, useRouter } from "vue-router";
 import { useConverstationStore } from "../../stores/converstationStore";
 
 
 const socket = inject("socket");
-const secret = ref("");
 const route = useRoute();
 const username = route.query.name;
+const converstationStore = useConverstationStore();
 
 const users = ref([]);
 const CopyUsers = ref([]);
 const searchActive = ref(false);
-const messages = ref([]);
-const userActive = ref(null);
-const message = ref("");
 const messageContainer = ref(null);
 const user_is_active = ref(false);
 const router = useRouter();
 const searchUsername = ref("");
 const width = ref(window.innerWidth);
 
-const converstationStore = useConverstationStore();
-const presenter = new ChatPresenter({
-  model: new data(),
-  view: {
-    users: users,
-    CopyUsers: CopyUsers,
-    message: message,
-    messages: messages,
-    userActive: userActive,
-    secret: secret
-  }
-});
-
 function goBack() {
   router.push("/");
   socket.emit("leave_private_chat");
+  converstationStore.userActive = null;
 }
 async function selectUser(converstation_id, user) {
-  await presenter.getMessages(converstation_id, user, users.value, socket);
+  await converstationStore.getMessages(converstation_id, user, socket);
   await nextTick(() => {
     scrollToBottom();
   });
@@ -53,72 +36,62 @@ function scrollToBottom() {
   }
 }
 async function sendMessage() {
-  await presenter.sendMessage(userActive.value, message.value, secret.value, users.value, socket);
+  await converstationStore.sendMessage(socket);
   await nextTick(() => {
     scrollToBottom();
   });
 }
 function handleMessageSended(data) {
-  console.log(data);
-  presenter.handleMessageSended(messages.value, data);
+  converstationStore.handleMessageSended(data);
 }
 function handlePrivateMessage(data) {
-  if (userActive.value?.id === data.message.converstation_id) {
-    messages.value = [...messages.value, data.message];
-  }
-  const findIndex = users.value.findIndex(user => user.id === data.message.converstation_id);
-  console.log(users.value[findIndex]);
-  console.log("ini find index", findIndex);
-  if (findIndex > -1) {
-    users.value[findIndex].last_message = data.message;
-    const unread_count = users.value[findIndex].unread_count;
-    users.value[findIndex].unread_count = data.message.is_read === "true" ? unread_count : unread_count + 1;
-  }
+  converstationStore.handlePrivateMessage(data);
 }
 function updateWidth() {
   width.value = window.innerWidth;
 }
 function handleDeleteActive() {
-  userActive.value = null;
-  socket.emit("leave_private_chat");
+  converstationStore.handleDeleteActive(socket);
 }
 function handleCutContent(content) {
   if (!content) return;
-  const decrypted = presenter.decryptMessage(content, secret.value);
+  const decrypted = converstationStore.decryptMessage(content);
   if (width.value > 300 && width.value < 800) {
     return decrypted;
   }
   if (decrypted.length > 30) {
-    return `${decrypted.slice(0, 30)}...`;
+    return `${decrypted.slice(0, 25)}...`;
   }
   return decrypted;
 }
 function handleUserActive(data) {
-  user_is_active.value = data.is_active;
+  if (converstationStore.userActive?.user.user_id === data.from) {
+    user_is_active.value = data.is_active;
+  }
 }
 function handleDecryptedMessage(message) {
-  const decrypted = presenter.decryptMessage(message, secret.value);
+  const decrypted = converstationStore.decryptMessage(message);
   return decrypted;
 }
 function handleMessagesSended(data) {
-  presenter.handleMessagesSended(data, messages.value);
+  converstationStore.handleMessagesSended(data);
 }
 function handlePrivateMessagesRead(data) {
-  presenter.handlePrivateMessagesRead(data, userActive.value, messages.value);
+  converstationStore.handlePrivateMessagesRead(data);
 }
 onMounted(async () => {
-  await presenter.getSecret();
-  await presenter.getConverstations();
+  await converstationStore.getSecret();
+  await converstationStore.getConverstations();
   await nextTick();
   if (username) {
-    await presenter.guestConverstation(username, users.value);
+    await converstationStore.guestConverstation(username, socket);
   }
   window.addEventListener('resize', updateWidth);
   socket.on("message_sended", handleMessageSended);
   socket.on("private_message", handlePrivateMessage);
   socket.on("user_active", handleUserActive);
   socket.on("messages_sended", handleMessagesSended);
-  socket.on("private_message_read", handlePrivateMessagesRead);
+  socket.on("private_message_unread", handlePrivateMessagesRead);
 })
 watch(searchUsername, (newValue) => {
   const search = CopyUsers.value.filter(user => user.user.username.toLowerCase().includes(newValue.toLowerCase()));
@@ -129,14 +102,14 @@ watch(searchUsername, (newValue) => {
   searchActive.value = false;
 });
 watch(() => route.query.name, async (newValue) => {
-  await presenter.guestConverstation(newValue, users.value);
+  await converstationStore.guestConverstation(newValue, socket);
 });
 </script>
 <template>
   <div class="flex h-screen bg-[#f0ede7] text-gray-900">
     <!-- Sidebar -->
     <div class="flex-col bg-[#f0ede7] border-r border-gray-300"
-      :class="[width < 800 ? userActive ? 'hidden' : 'flex w-full' : 'flex w-72']">
+      :class="[width < 800 ? converstationStore.userActive ? 'hidden' : 'flex w-full' : 'flex w-72']">
       <header class="flex items-center py-4 px-3 border-b border-gray-300">
         <button @click="goBack" aria-label="Back" class="pr-3">
           <ChevronLeft class="w-7 h-7" />
@@ -148,19 +121,19 @@ watch(() => route.query.name, async (newValue) => {
           <input type="search" v-model="searchUsername" class="w-full p-2 rounded-full border border-gray-300 px-4" placeholder="Search" name="search" id="search">
           <button class="absolute right-0 mr-5" :class="[searchActive ? 'hidden' : 'block']"><Search class="w-4 h-4" /></button>
         </div>
-        <template v-for="(user, index) in users" :key="user.id">
+        <template v-for="(user, index) in converstationStore.converstations" :key="user.id">
           <button @click="selectUser(user.id, user)" :class="['flex items-center p-3 cursor-pointer hover:bg-gray-200 transition-colors rounded-r-lg',
-            userActive?.id === user.id ? 'bg-white font-semibold text-orange-600' : 'text-gray-800']">
+            converstationStore.userActive?.id === user.id ? 'bg-white font-semibold text-orange-600' : 'text-gray-800']">
             <div class="flex-shrink-0 rounded-full w-10 h-10 bg-emerald-700">
               <img :src="user.user.profile.profile_picture || '/images/foto_default.jpg'" :alt="user.user.username"
                 class="w-full h-full object-cover rounded-full">
             </div>
             <div class="ml-3 flex flex-col items-start">
               <span
-                :class="userActive?.id === user.id ? 'text-orange-600 font-semibold' : (user?.isUnread ? 'text-orange-600 font-semibold' : 'font-bold')">
+                :class="converstationStore.userActive?.id === user.id ? 'text-orange-600 font-semibold' : (user?.isUnread ? 'text-orange-600 font-semibold' : 'font-bold')">
                 {{ user.user.username }}
               </span>
-              <small class="text-gray-700 lowercase">{{ handleCutContent(user.last_message?.content) }}</small>
+              <small class="text-gray-700 text-start lowercase">{{ handleCutContent(user.last_message?.content) }}</small>
             </div>
             <div v-if="user?.unread_count > 0"
               class="ml-auto bg-orange-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center select-none">
@@ -172,8 +145,8 @@ watch(() => route.query.name, async (newValue) => {
     </div>
 
     <!-- Chat area -->
-    <section v-if="userActive !== null" class="flex-col flex-grow bg-[#f9fbfe]"
-      :class="[width < 800 ? userActive ? 'flex w-full' : 'hidden' : 'flex']">
+    <section v-if="converstationStore.userActive !== null" class="flex-col flex-grow bg-[#f9fbfe]"
+      :class="[width < 800 ? converstationStore.userActive ? 'flex w-full' : 'hidden' : 'flex']">
       <!-- Chat header -->
       <header class="flex items-center justify-between p-3 border-b border-gray-300 select-none">
         <button v-if="width < 800" @click="handleDeleteActive" class="px-2">
@@ -181,11 +154,11 @@ watch(() => route.query.name, async (newValue) => {
         </button>
         <div class="flex items-center space-x-3 w-full">
           <div class="w-12 h-12 rounded-full bg-emerald-700">
-            <img :src="userActive.user.profile.profile_picture || '/images/foto_default.jpg'" :alt="userActive.user.username"
+            <img :src="converstationStore.userActive.user.profile.profile_picture || '/images/foto_default.jpg'" :alt="converstationStore.userActive.user.username"
               class="w-full h-full object-cover rounded-full">
           </div>
           <div class="flex flex-col">
-            <span class="font-bold text-lg">{{ userActive.user.username }}</span>
+            <span class="font-bold text-lg">{{ converstationStore.userActive.user.username }}</span>
             <div v-if="user_is_active" class="flex items-center space-x-1">
               <span class="w-3 h-3 rounded-full bg-orange-500 inline-block"></span>
               <small class="text-orange-500 lowercase font-semibold">online</small>
@@ -221,18 +194,20 @@ watch(() => route.query.name, async (newValue) => {
 
       <!-- Messages area -->
       <main ref="messageContainer" class="flex-grow p-6 overflow-y-auto space-y-4">
-        <div v-if="messages.length <= 0">
-          <h2>Belum ada chattingan nih</h2>
+        <div v-if="converstationStore.messages <= 0" class="flex flex-col h-full items-center justify-center">
+          <img :src="converstationStore.userActive.user.profile.profile_picture" alt="profile" class="w-40 h-40 rounded-full object-cover">
+          <h2 class="text-black font-semibold text-xl">{{ converstationStore.userActive.user.username }}</h2>
+          <p class="text-gray-600">Tidak ada pesan di sini. Mulailah percakapan dengan sapaan hangat ✨</p>
         </div>
-        <div v-for="(msg, index) in messages" :key="index"
-          :class="['flex items-start gap-2', msg.sender_id === userActive.my_id ? 'justify-end space-x-reverse' : '']">
+        <div v-for="(msg, index) in converstationStore.messages" :key="index"
+          :class="['flex items-start gap-2', msg.sender_id === converstationStore.userActive.my_id ? 'justify-end space-x-reverse' : '']">
           <div class="flex flex-col items-center group"> 
             <div :class="[
               'inline-block rounded-2xl max-w-xs',
-              msg.sender_id === userActive.my_id ? 'text-white bg-orange-500' : 'border border-gray-300 text-gray-700 bg-white'
+              msg.sender_id === converstationStore.userActive.my_id ? 'text-white bg-orange-500' : 'border border-gray-300 text-gray-700 bg-white'
             ]">
-              <p class="px-4" :class="[userActive.my_id === msg.sender_id ? 'pt-2' : 'py-2']">{{ handleDecryptedMessage(msg.content) }}</p>
-              <div v-if="userActive.my_id === msg.sender_id" class="flex px-2 justify-end">
+              <p class="px-4" :class="[converstationStore.userActive.my_id === msg.sender_id ? 'pt-2' : 'py-2']">{{ handleDecryptedMessage(msg.content) }}</p>
+              <div v-if="converstationStore.userActive.my_id === msg.sender_id" class="flex px-2 justify-end">
                 <Check v-if="msg.sended === 'pending'" class="w-4 h-4" />
                 <CheckCheck v-else-if="msg.sended === 'sended' && msg.is_read === 'false'" class="w-4 h-4" />
                 <CheckCheck v-else-if="msg.sended === 'sended' && msg.is_read === 'true'"
@@ -247,7 +222,7 @@ watch(() => route.query.name, async (newValue) => {
       <!-- Input area -->
       <footer class="p-3 border-t border-gray-300">
         <form @submit.prevent="sendMessage" class="flex items-center">
-          <input v-model="message" type="text" placeholder="Type your message"
+          <input v-model="converstationStore.message" type="text" placeholder="Type your message"
             class="flex-grow border border-gray-300 rounded-full px-5 py-2 mr-4 outline-none focus:ring-2 focus:ring-orange-400" />
           <button type="submit" aria-label="Send message"
             class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-orange-400 transition-colors">

@@ -1,5 +1,5 @@
 <script setup>
-import { LayoutDashboard, MessageCircle, UserRoundPlus } from 'lucide-vue-next';
+import { HeartPlus, LayoutDashboard, MessageCircle } from 'lucide-vue-next';
 import { RouterLink } from 'vue-router';
 
 const props = defineProps({
@@ -35,7 +35,7 @@ const props = defineProps({
                     <RouterLink to="/not/followers" v-slot="{ isExactActive }">
                         <div class="flex items-center gap-2 p-2 border-r-3"
                             :class="isExactActive ? 'border-orange-600 bg-orange-100 font-semibold text-orange-600' : 'border-transparent'">
-                            <UserRoundPlus class="w-5 h-5" /> Friends
+                            <HeartPlus class="w-5 h-5" /> Followers
                         </div>
                     </RouterLink>
                 </li>

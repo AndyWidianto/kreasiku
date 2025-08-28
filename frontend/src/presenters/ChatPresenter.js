@@ -12,28 +12,6 @@ export default class ChatPresenter {
         this.#view = view;
     }
 
-    async getConverstations() {
-        try {
-            const converstation = await getConverstations();
-            if (converstation.length > 0) {
-                const sort = this.sortConverstions(converstation);
-                this.#view.users.value = sort;
-                this.#view.CopyUsers.value = sort;
-                this.converstations = sort;
-                return;
-            }
-            const res = await this.#model.getConverstations();
-            this.#view.users.value = res.data;
-            this.converstations = res.data;
-            res.data.forEach(async (value) => {
-                value.guest = false;
-                await setCoverstation(value.id, value);
-            });
-        } catch (err) {
-            console.error(err);
-        }
-    }
-
     async guestConverstation(username, converstations) {
         try {
             const res = await this.#model.getUserFromUsername(username);
@@ -68,6 +46,8 @@ export default class ChatPresenter {
     }
     sortConverstions(converstations) {
         const sortConverstions = converstations.sort((a, b) => {
+            if (a.last_message && !b.last_message) return -1;
+            if (!a.last_message && b.last_message) return 1;
             if (a.unread_count > 0 && b.unread_count === 0) return -1;
             if (a.unread_count === 0 && b.unread_count > 0) return 1;
             return new Date(b.last_message?.createdAt) - new Date(a.last_message?.createdAt);
@@ -90,12 +70,6 @@ export default class ChatPresenter {
             await setMessages(id, res.data);
         } catch (err) {
             console.error(err);
-        } finally {
-            const converstation = await getConverstation(id);
-            if (converstation) {
-                converstation.unread_count = 0;
-                await setCoverstation(id, converstation);
-            }
         }
     }
     async updateMessageUnread(id, users, socket) {
@@ -128,17 +102,14 @@ export default class ChatPresenter {
             this.#view.message.value = '';
             const findIndex = users.findIndex(value => value.id === user.id);
             users[findIndex].last_message = data;
-            const messages = await getMessages(user.id);
             this.converstations[findIndex].last_message = data;
             if (user?.guest) {
                 const res = await this.#model.createConverstation(user.id, user.user_id2);
                 console.log(res);
                 users[findIndex].guest = false;
                 this.converstations[findIndex].guest = false;
-                await setCoverstation(user.id, this.converstations[findIndex]);
-            } else {
-                await setCoverstation(user.id, this.converstations[findIndex]);
             }
+            const messages = await getMessages(user.id);
             this.#view.users.value = this.sortConverstions(users);
             await setMessages(user.id, [...messages, data]);
             socket.emit("private_message", ({ id_target: user.user.user_id, user: user.me, message: data }));

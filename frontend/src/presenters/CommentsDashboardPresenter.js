@@ -12,7 +12,7 @@ export default class CommentsDashboardPresenter {
         this.#view.loading.value = true;
         try {
             const res = await this.#model.getPosting(id);
-            console.log(res.data);
+            res.data.comments = [];
             this.#view.posting.value = res.data;
         } catch (err) {
             console.error(err);
@@ -85,8 +85,7 @@ export default class CommentsDashboardPresenter {
                 content: content,
                 user: user,
             }
-            posting.comments.push(state);
-            this.#view.posting.value = posting;
+            this.#view.comments.value = [state, ...this.#view.comments.value];
             this.#view.content.value = '';
             await this.#model.createComment(comment_id, posting.posting_id, content);
             const id = nanoid();

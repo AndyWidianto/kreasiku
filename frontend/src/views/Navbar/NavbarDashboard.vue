@@ -1,8 +1,7 @@
 <script setup>
-import { Bell, Heart, MessageCircle, Search, UserPlus2, User2, LogOut, Home, AtSign } from 'lucide-vue-next';
+import { Bell, Heart, MessageCircle, Search, UserPlus2, User2, LogOut, Home, AtSign, HeartPlus } from 'lucide-vue-next';
 import { inject, onMounted, ref } from 'vue';
 import { RouterLink, useRouter } from 'vue-router';
-import LoadingSpinner from '../components/loadings/LoadingSpinner.vue';
 import { useNotifStore } from '../../stores/notifStore';
 import Loading from '../components/loadings/Loading.vue';
 
@@ -75,6 +74,7 @@ function initObserver() {
 }
 onMounted(() => {
     notifStore.getNotificationNotRead();
+    notifStore.getNotifications();
     window.addEventListener("click", handleClick);
     socket.on("notifications", handleNotifications);
 });
@@ -94,14 +94,21 @@ onMounted(() => {
         <li class="md:hidden">
             <RouterLink to="/" v-slot="{ isExactActive }">
                 <div :class="[isExactActive ? 'text-orange-500' : 'text-gray-800']">
-                    <Home class="w-6 h-6" />
+                    <Home class="w-5 h-5" />
                 </div>
             </RouterLink>
         </li>
         <li class="md:hidden">
             <RouterLink to="/chat" v-slot="{ isExactActive }">
                 <div :class="[isExactActive ? 'text-orange-500' : 'text-gray-800']">
-                    <MessageCircle class="w-6 h-6" />
+                    <MessageCircle class="w-5 h-5" />
+                </div>
+            </RouterLink>
+        </li>
+        <li class="md:hidden">
+            <RouterLink to="/not/followers" v-slot="{ isExactActive }">
+                <div :class="[isExactActive ? 'text-orange-500' : 'text-gray-800']">
+                    <HeartPlus class="w-5 h-5" />
                 </div>
             </RouterLink>
         </li>

@@ -49,10 +49,6 @@ const routes = [
             {
                 path: "/notifications",
                 component: NotificationPage
-            },
-            {
-                path: "/percobaan",
-                component: Percobaan
             }
         ]
     },
@@ -83,6 +79,10 @@ const routes = [
     {
         path: "/edit/cover",
         component: CreateCover
+    },
+    {
+        path: "/percobaan",
+        component: Percobaan
     }
 ];
 

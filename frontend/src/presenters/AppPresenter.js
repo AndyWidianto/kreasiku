@@ -12,8 +12,8 @@ export default class AppPresenter {
     async handleMessageSended(data) {
         const messages = await getMessages(data.converstation_id);
         if (messages) {
-            const findIndex = messages.findIndex(message => message.message_id === item.message_id);
-            messages[findIndex] = data.message;
+            const findIndex = messages.findIndex(message => message.message_id === data.id);
+            messages[findIndex] = data.data;
             await setMessages(data.converstation_id, messages);
         }
     }
@@ -31,50 +31,31 @@ export default class AppPresenter {
         }
     }
     async handlePrivateMessage(data, secret) {
-        console.log("private message dari app ", data);
-        const messages = await getMessages(data.message.converstation_id);
-        const converstation = await getConverstation(data.message.converstation_id);
-        if (converstation) {
-            converstation.last_message = data.message;
-            converstation.unread_count = data.message.is_read === "true" ? converstation.unread_count : converstation.unread_count + 1;
-            await setCoverstation(data.message.converstation_id, converstation);
-        }
-        if (!converstation) {
-            const res = await this.#model.getConverstation(data.message.converstation_id);
-            await setCoverstation(res.data.id, res.data);
-        }
-        if (messages) {
-            const newMessages = [...messages, data.message];
-            await setMessages(data.message.converstation_id, newMessages);
-        }
         new Notification(data.user.username, {
             icon: data.user.profile.profile_picture || '/images/book.jpg',
             body: this.handleDecrypted(data.message.content, secret)
         });
+        const messages = await getMessages(data.message.converstation_id);
+        if (messages) {
+            const newMessages = [...messages, data.message];
+            return await setMessages(data.message.converstation_id, newMessages);
+        }
+        await setMessages(data.message.converstation_id, data.message);
     }
     async handlePrivateMessages(datas, secret) {
-        for (const data of datas.datas) {
-            const converstation = await getConverstation(data.message.converstation_id);
-            const messages = await getMessages(data.message.converstation_id);
-            if (converstation) {
-                converstation.last_message = data.message;
-                converstation.unread_count = data.message.is_read === "true" ? converstation.unread_count : converstation.unread_count + 1;
-                await setCoverstation(data.message.converstation_id, converstation);
-            }
-            if (!converstation) {
-                const res = await this.#model.getConverstation(data.message.converstation_id);
-                await setCoverstation(res.data.id, res.data);
-            }
-            if (messages) {
-                const newMessages = [...messages, data.message];
-                await setMessages(data.message.converstation_id, newMessages);
-            }
-        }
         const data = datas.datas[datas.datas.length - 1];
         new Notification(data.user.username, {
             icon: data.user.profile.profile_picture || '/images/book.jpg',
             body: this.handleDecrypted(data.message.content, secret)
         });
+        for (const data of datas.datas) {
+            console.log("data ", data);
+            const messages = await getMessages(data.message.converstation_id);
+            if (messages) {
+                const newMessages = [...messages, data.message];
+                await setMessages(data.message.converstation_id, newMessages);
+            }
+        }
     }
     async handlePrivateMessagesRead(data) {
         const messages = await getMessages(data.id);
@@ -89,11 +70,14 @@ export default class AppPresenter {
     async handleMessagesSended(data) {
         const datas = data.datas;
         const messages = await getMessages(data.id);
-        for (const item of datas) {
-            const findIndex = messages.findIndex(message => message.message_id === item.message_id);
-            messages[findIndex] = item;
-            messages[findIndex].is_read = data.is_read;
+        if (messages) {
+            datas.forEach(item => {
+                console.log(item);
+                const findIndex = messages.findIndex(message => message.message_id === item.message_id);
+                item.is_read = data.is_read;
+                messages[findIndex] = item;
+            });
+            await setMessages(data.id, messages);
         }
-        await setMessages(data.id, messages);
     }
 }

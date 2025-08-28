@@ -98,7 +98,7 @@ watch(() => route.params.username, (newUsername) => {
                 class="w-15 h-15 md:w-25 md:h-25 object-cover rounded-full border-2 md:border-4 border-gray-100 absolute bottom-0 z-10">
         </div>
         <div class="pb-4 mb-1 border-b-1 border-gray-600">
-            <div class="flex w-full p-2">
+            <div class="block sm:flex w-full p-2">
                 <div class="w-full">
                     <h2 class="text-2xl font-bold">
                         {{ user?.profile.name }}
@@ -107,14 +107,14 @@ watch(() => route.params.username, (newUsername) => {
                         {{ user?.profile.description }}
                     </p>
                 </div>
-                <div v-if="!user?.mine" class="flex items-center gap-4 p-2">
+                <div v-if="!user?.mine" class="flex justify-end items-center gap-4 p-2">
                     <button v-if="!user?.my_following" @click="Follow" class="py-1 px-4 bg-orange-500 hover:bg-orange-600 text-white rounded-sm">
                         {{ user?.user_follow_me ? 'Follback' : 'Follow' }}
                     </button>
                     <button v-else @click="unFollow" class="py-1 px-4 border border-gray-300 rounded-sm">Unfollow</button>
                     <button @click="handleToMessages" class="py-1 px-4 rounded-sm hover:bg-gray-200 border border-gray-300">Message</button>
                 </div>
-                <div v-else class="flex items-center p-2 text-gray-800">
+                <div v-else class="flex justify-end items-center p-2 text-gray-800">
                     <button @click="handleUpdateProfile" class="px-4 rounded-sm border hover:bg-gray-100">Edit</button>
                     <button @click="handleCopyUrl" class="px-2">
                         <Copy v-if="!copy" class="w-6 h-6" />

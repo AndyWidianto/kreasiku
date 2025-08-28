@@ -165,11 +165,11 @@ export const useDashboardStore = defineStore('post', {
                 if (findIndex > -1) {
                     await navigator.clipboard.writeText(`${window.location.href}posting/${posting_id}`);
                     this.postings[findIndex].icon_share = true;
-                    if (!this.postings[findIndex].share) {
+                    if (!this.postings[findIndex].my_share) {
                         this.postings[findIndex].total_shares = this.postings[findIndex].total_shares + 1;
+                        this.postings[findIndex].my_share = true;
                         const id = nanoid();
-                        const res = await api.createShare(id, posting_id);
-                        console.log(res);
+                        await api.createShare(id, posting_id);
                     }
                     setTimeout(() => {
                         this.postings[findIndex].icon_share = false;
