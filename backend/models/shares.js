@@ -29,6 +29,7 @@ const shares = db.define('shares', {
 
 
 postings.hasMany(shares, { foreignKey: 'posting_id', as: 'shares' });
+postings.hasOne(shares, { foreignKey: 'posting_id', as: 'share' });
 users.hasMany(shares, { foreignKey: 'user_id', as: 'shares' });
 
 shares.belongsTo(postings, { foreignKey: 'posting_id', as: 'posting' });

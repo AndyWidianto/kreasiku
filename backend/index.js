@@ -7,6 +7,7 @@ import { Server } from 'socket.io';
 import { createServer } from 'http';
 import { defineSocket } from './socket.js';
 
+
 db.sync({ alter: false });
 const app = express();
 const server = new createServer(app);

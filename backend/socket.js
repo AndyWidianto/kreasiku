@@ -25,6 +25,7 @@ export const defineSocket = (io) => {
         // memastikan tidak ada pesan yang menumpuk
         const datasSaved = cache.get(`receiver-offline-${user_id}`);
         if (datasSaved) {
+            console.log(datasSaved);
             io.to(id).emit("private_messages", ({ from: user_id, datas: datasSaved }));
             const newData = datasSaved.reduce((acc, item) => {
                 if (!acc[item.message.converstation_id]) {
@@ -37,13 +38,11 @@ export const defineSocket = (io) => {
                 const target = cache.get(value[value.length - 1].sender_id);
                 if (target) {
                     const room = cache.get(`room:${user_id}`);
-                    console.log("sedang di room", room);
-                    console.log("ini usernya", value[value.length - 1].sender_id);
                     const is_read = room === value[value.length - 1].sender_id ? "true" : "false";
-                    io.to(target).emit("messages_sended", ({ id: parseInt(key), datas: value, is_read }));
+                    io.to(target).emit("messages_sended", ({ id: key, datas: value, is_read }));
                 } else {
                     const datasSenderOffline = cache.get(`sender-offline-${value[value.length - 1].sender_id}`);
-                    const senderOffline = { id: parseInt(key), datas: value };
+                    const senderOffline = { id: key, datas: value };
                     if (!datasSenderOffline) {
                         return cache.set(`sender-offline-${value[value.length - 1].sender_id}`, [senderOffline]);
                     }
@@ -63,9 +62,11 @@ export const defineSocket = (io) => {
             })
             cache.delete(`sender-offline-${user_id}`);
         }
-        const messageRead = cache.get(`message-read-${user_id}`);
-        if (messageRead) {
-            io.to(id).emit("private_message_read", (messageRead));
+        const messageUnread = cache.get(`message-unread-${user_id}`);
+        if (messageUnread) {
+           messageUnread.forEach(value => {
+             io.to(id).emit("private_message_unread", (value));
+           });
         }
         // memantau user sedang chat dengan siapa
         socket.on("join_private_chat", ({ partnerId }) => {
@@ -76,12 +77,19 @@ export const defineSocket = (io) => {
             cache.delete(`room:${user_id}`);
             console.log("berhasil hapus room");
         });
-        socket.on("private_message_read", ({ id, target_id }) => {
+        socket.on("private_message_unread", ({ id, target_id }) => {
             const target = cache.get(target_id);
             if (target) {
-                io.to(target).emit("private_message_read", ({ from: user_id, id }));
+                return io.to(target).emit("private_message_unread", ({ from: user_id, id }));
+            } 
+            const unreads = cache.get(`message-unread-${target_id}`);
+            if (!unreads)  {
+                return cache.set(`message-unread-${target_id}`, [{ from: user_id, id }]);
             }
-            cache.set(`message-read-${target_id}`, { from: user_id, id });
+            const findIndex = unreads.findIndex(unread => unread.id === id);
+            if (findIndex < 0) {
+                cache.set(`message-unread-${target_id}`, [...unreads, { from: user_id, id }]);
+            }
         })
         socket.on("private_message", async ({ id_target, user, message }) => {
             const target = cache.get(id_target);

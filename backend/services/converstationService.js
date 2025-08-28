@@ -94,7 +94,7 @@ export const findConverstations = async ({ id, protocol, host }) => {
             me,
         }
     })
-    return results;
+    return newResults;
 }
 
 export const findConverstation = async ({ id, user_id, protocol, host }) => {

@@ -61,11 +61,19 @@ export const findPostings = async ({ protocol, host, limit, offset, user_id }) =
                 model: shares,
                 as: "shares",
                 attributes: [],
+            },
+            {
+                model: shares,
+                as: "share",
+                required: null,
+                where: {
+                    user_id: user_id || null
+                }
             }
         ],
         group: ["postings.posting_id"],
-        limit: limit,
-        offset: offset
+        limit,
+        offset
     });
     if (results.length < 1) {
         return results;
@@ -74,6 +82,7 @@ export const findPostings = async ({ protocol, host, limit, offset, user_id }) =
         const is_like = posting.like ? true : false;
         const profile_picture = posting.user.profile.profile_picture;
         const cover_picture = posting.user.profile.cover_picture;
+        const my_share = posting.share ? true : false;
         posting.user.profile.profile_picture = profile_picture ? `${protocol}://${host}/${profile_picture}` : null;
         posting.user.profile.cover_picture = cover_picture ? `${protocol}://${host}/${cover_picture}` : null;
         const mine = posting.user_id === user_id;
@@ -86,6 +95,7 @@ export const findPostings = async ({ protocol, host, limit, offset, user_id }) =
         return {
             mine,
             is_like,
+            my_share,
             ...posting.dataValues
         }
     });
@@ -147,19 +157,28 @@ export const searchPostings = async ({ protocol, host, limit, offset, search, us
                 model: shares,
                 as: "shares",
                 attributes: [],
+            },
+            {
+                model: shares,
+                as: "share",
+                required: null,
+                where: {
+                    user_id: user_id || null
+                }
             }
         ],
         group: ["postings.posting_id"],
-        limit: limit,
-        offset: offset
+        limit,
+        offset
     });
     if (results.length < 1) {
         return results;
     }
-    const newResults =  results.map(posting => {
+    const newResults = results.map(posting => {
         const is_like = posting.like ? true : false;
         const mine = posting.user.user_id === user_id;
         const profile_picture = posting.user.profile.profile_picture;
+        const my_share = posting.share ? true : false;
         posting.user.profile.profile_picture = profile_picture ? `${protocol}://${host}/${profile_picture}` : null;
         posting.dataValues.images = posting.dataValues.images.map(image => {
             image.image = `${protocol}://${host}/${image.image}`;
@@ -170,6 +189,7 @@ export const searchPostings = async ({ protocol, host, limit, offset, search, us
         return {
             is_like,
             mine,
+            my_share,
             ...posting.dataValues
         }
     });
@@ -229,12 +249,22 @@ export const findPostingPrimary = async (protocol, host, id, user_id) => {
                 model: shares,
                 as: "shares",
                 attributes: [],
+            },
+            {
+                model: shares,
+                as: "share",
+                required: null,
+                where: {
+                    user_id: user_id || null
+                }
             }
         ],
     });
     const resultJson = result.toJSON();
     resultJson.is_like = resultJson.like ? true : false;
     const profile_picture = resultJson.user.profile.profile_picture;
+    resultJson.my_posting = resultJson.user.user_id === user_id ? true : false;
+    resultJson.my_share = resultJson.share ? true : false;
     resultJson.user.profile.profile_picture = profile_picture ? `${protocol}://${host}/${profile_picture}` : null;
     resultJson.images = resultJson.images.map(image => {
         image.image = `${protocol}://${host}/${image.image}`
