@@ -263,4 +263,8 @@ export default class data {
         const res = await AuthApi.delete(`/follow/${id}`);
         return res.data;
     } 
+    async refreshToken() {
+        const res = await PublicApi.get('/refreshToken');
+        return res.data;
+    }
 }

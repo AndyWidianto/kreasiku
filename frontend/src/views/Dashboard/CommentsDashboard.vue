@@ -182,9 +182,10 @@ watch(content, (newValue) => {
             </RouterLink>
             <div class="w-full">
                 <p class="px-1 md:px-0 text-gray-800">
-                    <span v-for="content in posting?.content.split(/(#\w+)/g)">
+                    <span v-for="content in posting?.content.split(/(#\w+|\n)/g)">
                         <RouterLink :to="`/search/${content.slice(1)}`" v-if="content.startsWith('#')"
                             class="text-blue-600 hover:underline">{{ content }}</RouterLink>
+                            <br v-else-if="content.startsWith('/n')">
                         <span v-else>{{ content }}</span>
                     </span>
                 </p>

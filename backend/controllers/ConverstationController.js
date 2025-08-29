@@ -20,10 +20,11 @@ export const createConverstation = async (req, res) => {
 }
 
 export const getConverstations = async (req, res) => {
-    const { user_id } = req.user;
+    const user = req.user;
     try {
-        const results = await findConverstations({ id: user_id, protocol: req.protocol, host: req.get('host') });
+        const results = await findConverstations({ id: user.user_id, protocol: req.protocol, host: req.get('host') });
         return res.json({
+            user: user,
             data: results
         });
     } catch (err) {

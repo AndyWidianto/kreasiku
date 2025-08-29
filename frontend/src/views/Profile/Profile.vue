@@ -34,7 +34,7 @@ function likePosting(id) {
     presenter.handleActionsLike(id, postings.value, user.value?.user_id);
 }
 function parseContent(content) {
-    const newContent = content.split(/(#\w+)/g);
+    const newContent = content.split(/(#\w+|\n)/g);
     return newContent;
 }
 function handleUpdateProfile() {
@@ -155,6 +155,7 @@ watch(() => route.params.username, (newUsername) => {
                     <span v-for="content in parseContent(posting?.content)">
                         <RouterLink :to="`/search/${content.slice(1)}`" v-if="content.startsWith('#')"
                             class="text-blue-600 hover:underline">{{ content }}</RouterLink>
+                            <br v-else-if="content.startsWith('\n')">
                         <span v-else>{{ content }}</span>
                     </span>
                 </p>

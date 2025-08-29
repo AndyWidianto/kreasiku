@@ -1,40 +1,15 @@
 # 🚀 Kreasiku
 
-A simple fullstack social media app built with **Express.js** (Backend) and **Vue.js** (Frontend).  
-Features include **JWT authentication**, **create post**, **like**, **comment**, **share**, and **notifications**.
+Kreasiku adalah platform interaktif yang saya kembangkan sebagai project pribadi untuk melatih kemampuan **Fullstack Development**. Aplikasi ini memiliki fitur **real-time communication** menggunakan **Socket.IO**.
 
 ---
 
-## ✨ Features
+## ✨ Fitur Utama
 
-✅ **User Authentication**
-- Register & Login with JWT
-- Secure routes with token validation
-
-✅ **Posts**
-- Create Post
-- Read All Posts
-- Read Single Post
-- Delete Own Post
-
-✅ **Likes**
-- Like/Unlike Post
-- Get Like Count per Post
-
-✅ **Comments**
-- Add Comment to Post
-- Get Comments for a Post
-- Delete Own Comment
-
-✅ **Share**
-- Share an existing post to your timeline
-
-✅ **Notifications**
-- Receive notification when:
-  - Someone likes your post
-  - Someone comments on your post
-  - Someone shares your post
-- Mark notifications as read/unread
+- 🔔 Notifikasi real-time  
+- 💬 Pesan real-time (chat)  
+- 👍 Like, Comment, & Share  
+- 🔐 Autentikasi menggunakan **JWT & OAuth**
 
 ---
 
@@ -44,14 +19,17 @@ Features include **JWT authentication**, **create post**, **like**, **comment**,
 - Node.js
 - Express.js
 - JWT (jsonwebtoken)
-- Sequelize ORM (MySQL/PostgreSQL)
+- Sequelize ORM (MySQL)
 - bcryptjs
+- Oauth
 
 **Frontend:**  
 - Vue.js 3
 - Vue Router
 - Axios
 - Tailwind CSS
+- pinia
+- indexedDB
 
 ---
 ## 📁 Project Structure
@@ -71,7 +49,9 @@ Features include **JWT authentication**, **create post**, **like**, **comment**,
 │
 ├── services/        # Logika bisnis murni: fungsi helper, query, atau proses yang dipanggil controller
 │
-├── public/          # File statis: misal upload gambar, file post image, dsb.
+├── public/          # File statis: gambar, file post image, dsb.
+│
+├── socket.js        # Konfigurasi Socket.IO: menangani event pesan & notifikasi real-time.
 │
 └── index.js         # Entry point: inisialisasi server Express, pasang middleware global, mount routes
 
@@ -82,6 +62,8 @@ Features include **JWT authentication**, **create post**, **like**, **comment**,
      ├── views/         # Komponen tampilan (page/screen)
      ├── presenters/    # Menghubungkan view & model (logika presentation)
      ├── router/        # Routing Vue (Vue Router)
+     ├── stores/        # State management menggunakan Pinia (cache & global store)
+     ├── until/         # Konfigurasi socket.io-client
      └── App.vue        # Root komponen Vue
 
 ```

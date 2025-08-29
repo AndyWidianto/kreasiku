@@ -13,9 +13,15 @@ export const useConverstationStore = defineStore('converstations', {
         secret: null,
         messages: [],
         message: '',
-        userActive: null
+        userActive: null,
+        user: null
     }),
     actions: {
+        isTokenExpiringSoon() {
+            const exp = this.user.exp;
+            const now = Date.now() / 1000;
+            return exp - now < 60;
+        },
         async getConverstations() {
             if (this.converstations) return;
             try {
@@ -28,6 +34,7 @@ export const useConverstationStore = defineStore('converstations', {
                     }
                 });
                 this.converstations = res.data;
+                this.user = res.user;
                 this.copyConverstations = [...res.data];
             } catch (err) {
                 console.error(err);
@@ -39,7 +46,7 @@ export const useConverstationStore = defineStore('converstations', {
                 const res = await api.getUserFromUsername(username);
                 const findIndex = this.converstations.findIndex(conv => conv.user.user_id === res.data?.user_id);
                 if (findIndex < 0) {
-                    const my_id = this.converstations[this.converstations.length - 1].my_id;
+                    const my_id = this.user?.user_id;
                     const newConverstation = {
                         id: nanoid(),
                         user_id1: my_id,
@@ -104,6 +111,10 @@ export const useConverstationStore = defineStore('converstations', {
                 this.converstations = this.sortConverstions(this.converstations);
                 const messages = await getMessages(this.userActive.id);
                 await setMessages(this.userActive.id, [...messages, data]);
+                if (this.isTokenExpiringSoon()) {
+                    const res = await api.refreshToken();
+                    localStorage.setItem('kreasiku', res.token);
+                }
                 socket.emit("private_message", ({ id_target: this.userActive.user.user_id, user: this.userActive.me, message: data }));
             } catch (err) {
                 console.error(err);
@@ -131,12 +142,14 @@ export const useConverstationStore = defineStore('converstations', {
         },
         async getMessages(id, user, socket) {
             try {
+                console.log(user);
                 this.message = "";
                 this.userActive = user;
                 this.updateMessageUnread(id, socket);
                 const messages = await getMessages(id);
                 socket.emit("join_private_chat", ({ partnerId: user.user.user_id }));
                 socket.emit("user_active", ({ id: user.user.user_id, is_active: false }));
+                socket.emit("private_message_unread", ({ id: user.id, target_id: user.user.user_id }));
                 if (messages) {
                     return this.messages = messages;
                 }
@@ -182,6 +195,7 @@ export const useConverstationStore = defineStore('converstations', {
             });
         },
         async handlePrivateMessagesRead(data) {
+            console.log("ini dari emit ", data, "dan ini user active ", this.userActive);
             if (this.userActive.id === data.id) {
                 const newMessages = this.messages.map(message => {
                     message.is_read = "true";

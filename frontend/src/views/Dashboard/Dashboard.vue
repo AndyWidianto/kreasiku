@@ -32,7 +32,7 @@ function createPosting() {
     dashboardStore.createPosting();
 }
 function parseContent(content) {
-    const newContent = content.split(/(#\w+)/g);
+    const newContent = content.split(/(#\w+|\n)/g);
     return newContent;
 }
 function handleParseDate(value) {
@@ -201,6 +201,7 @@ onMounted(async () => {
                     <span v-for="content in parseContent(posting?.content)">
                         <RouterLink :to="`/search/${content.slice(1)}`" v-if="content.startsWith('#')"
                             class="text-blue-600 hover:underline">{{ content }}</RouterLink>
+                            <br v-else-if="content.startsWith('\n')">
                         <span v-else>{{ content }}</span>
                     </span>
                 </p>

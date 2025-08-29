@@ -186,7 +186,8 @@ export const findUserPk = async (id) => {
     });
 }
 export const findUserToToken = async (id) => {
-    return await users.findByPk(id);
+    const result = await users.findByPk(id);
+    return result.toJSON();
 }
 export const updateRefreshToken = async (user_id, refreshToken) => {
     return await users.update({
